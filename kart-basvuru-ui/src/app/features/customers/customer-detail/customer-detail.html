@@ -1,0 +1,27 @@
+<section class="customer-page">
+  <div class="page-title"><div><p>MEMUR PANELİ / MÜŞTERİ İŞLEMLERİ</p><h1>Müşteri Detayı</h1><span>Müşteri bilgilerini inceleyin ve kart başvurusu sürecini başlatın.</span></div><a routerLink="/officer/customers">← Müşteri Sorgulamaya Dön</a></div>
+
+  @if (wasCreated) { <div class="success-message">✓ Müşteri kaydı başarıyla oluşturuldu.</div> }
+  @if (isLoading()) { <article class="state-card">Müşteri bilgileri yükleniyor...</article> }
+  @if (errorMessage()) { <div class="error-message" role="alert">{{ errorMessage() }}</div> }
+
+  @if (customer(); as item) {
+    <article class="profile-card">
+      <div class="profile-head"><div class="avatar">{{ item.firstName.charAt(0) }}{{ item.lastName.charAt(0) }}</div><div><span>{{ item.customerNumber }}</span><h2>{{ item.firstName }} {{ item.lastName }}</h2><p class="status" [class.passive]="!item.isActive">● {{ item.isActive ? 'Aktif Müşteri' : 'Pasif Müşteri' }}</p></div><div><button type="button" class="edit-button" (click)="isEditing.set(true)">Bilgileri Düzenle</button><a [routerLink]="['/officer/applications/new']" [queryParams]="{ customerId: item.id }">Yeni Kart Başvurusu</a></div></div>
+      @if (updateMessage()) { <div class="success-message">✓ {{ updateMessage() }}</div> }
+      @if (isEditing()) { <form class="edit-form" [formGroup]="editForm" (ngSubmit)="save()"><label>Ad<input formControlName="firstName"></label><label>Soyad<input formControlName="lastName"></label><label>Telefon<input formControlName="phoneNumber"></label><label>E-posta<input formControlName="emailAddress"></label><label>Aylık net gelir<input type="number" formControlName="monthlyNetIncome"></label><label>Diğer banka kart limiti<input type="number" formControlName="otherBankTotalCardLimit"></label><div><button type="button" class="edit-button" (click)="isEditing.set(false)">Vazgeç</button><button type="submit" class="edit-button primary">Kaydet</button></div></form> }
+      <div class="detail-grid">
+        <div><label>TC KİMLİK NUMARASI</label><b>{{ item.nationalIdentityNumber }}</b></div>
+        <div><label>TELEFON NUMARASI</label><b>{{ item.phoneNumber }}</b></div>
+        <div><label>E-POSTA ADRESİ</label><b>{{ item.emailAddress }}</b></div>
+        <div><label>AYLIK NET GELİR</label><b>{{ formatCurrency(item.monthlyNetIncome) }}</b></div>
+        <div><label>DİĞER BANKA KART LİMİTİ</label><b>{{ formatCurrency(item.otherBankTotalCardLimit) }}</b></div>
+      </div>
+    </article>
+
+    <div class="two-column">
+      <article><div class="card-title"><h3>Başvuru Özeti</h3><span>Bu müşteri için</span></div><div class="empty"><b>Henüz başvuru bulunmuyor</b><p>İlk kredi kartı başvurusunu oluşturarak değerlendirme sürecini başlatabilirsiniz.</p></div></article>
+      <article><div class="card-title"><h3>Kayıt Kontrolü</h3><span>Başvuru öncesi</span></div><ul><li><i>✓</i> Kimlik bilgileri kayıtlı</li><li><i>✓</i> İletişim bilgileri kayıtlı</li><li><i>✓</i> Gelir bilgisi kayıtlı</li></ul></article>
+    </div>
+  }
+</section>

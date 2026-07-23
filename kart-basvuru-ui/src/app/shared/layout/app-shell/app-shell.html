@@ -1,0 +1,45 @@
+<div class="application-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <b>Kredi Kartı Başvuru</b>
+      <span>Sistemi</span>
+    </div>
+
+    <nav aria-label="Ana menü">
+      <a [routerLink]="mode() === 'officer' ? '/officer/dashboard' : '/manager/dashboard'" routerLinkActive="active">
+        <span class="dot"></span> Dashboard
+      </a>
+
+      @if (mode() === 'officer') {
+        <p>MÜŞTERİ İŞLEMLERİ</p>
+        <a routerLink="/officer/customers" routerLinkActive="active"><span class="dot"></span> Müşteri Sorgulama</a>
+        <p>BAŞVURULAR</p>
+        <a routerLink="/officer/applications/new" routerLinkActive="active"><span class="dot"></span> Yeni Başvuru</a>
+        <a routerLink="/officer/applications" routerLinkActive="active"><span class="dot"></span> Başvurularım</a>
+      } @else {
+        <p>BAŞVURU YÖNETİMİ</p>
+        <a routerLink="/manager/applications" routerLinkActive="active"><span class="dot"></span> Bekleyen Başvurular</a>
+      }
+    </nav>
+
+    <div class="system-status"><i></i> Sistem aktif <span>v1.0</span></div>
+  </aside>
+
+  <div class="workspace">
+    <header>
+      <span>Kredi Kartı Başvuru Sistemi</span>
+      <div class="account">
+        <div class="avatar">{{ authService.currentUser()?.fullName?.slice(0, 2)?.toUpperCase() }}</div>
+        <div>
+          <b>{{ authService.currentUser()?.fullName }}</b>
+          <small>{{ mode() === 'officer' ? 'Memur' : 'Müdür' }}</small>
+        </div>
+        <button type="button" (click)="logout()">Çıkış</button>
+      </div>
+    </header>
+
+    <main>
+      <router-outlet />
+    </main>
+  </div>
+</div>

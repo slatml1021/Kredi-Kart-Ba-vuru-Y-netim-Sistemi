@@ -1,0 +1,65 @@
+<section class="dashboard-page">
+  <div class="page-heading">
+    <div>
+      <p>MEMUR PANELİ</p>
+      <h1>Merhaba, {{ authService.currentUser()?.fullName }}</h1>
+      <span>Başvurularınızın güncel durumunu ve performansını buradan takip edebilirsiniz.</span>
+    </div>
+    <a routerLink="/officer/customers">Müşteri Sorgula</a>
+  </div>
+
+  <div class="section-heading"><h2>Dönemsel Başvuru Sayıları</h2><p>Oluşturduğunuz başvuruların dönem bazlı özeti</p></div>
+  <div class="metric-grid period-grid">
+    @for (card of periodCards; track card.label) {
+      <article><span>{{ card.label }}</span><b>{{ card.value }}</b><small>{{ card.detail }}</small></article>
+    }
+  </div>
+
+  <div class="section-heading"><h2>Başvuru Durumları</h2><p>Oluşturduğunuz başvuruların güncel dağılımı</p></div>
+  <div class="metric-grid status-grid">
+    @for (card of statusCards; track card.label) {
+      <article><span>{{ card.label }}</span><b>{{ card.value }}</b></article>
+    }
+  </div>
+
+  <div class="section-heading"><h2>Başvuru Analizleri</h2><p>Kart tercihleri ve başvuruların yüzdesel dağılımı</p></div>
+  <div class="analysis-grid">
+    <article class="chart-card">
+      <div class="card-title"><h3>Kart Tipi Dağılımı</h3><p>Bu ay oluşturduğunuz 74 başvuru</p></div>
+      <div class="donut-area">
+        <div class="donut"><b>%38</b><span>Gold</span></div>
+        <ul>
+          <li><i class="gold"></i><span>Gold</span><b>%38</b><small>28 başvuru</small></li>
+          <li><i class="platinum"></i><span>Platinum</span><b>%27</b><small>20 başvuru</small></li>
+          <li><i class="classic"></i><span>Classic</span><b>%20</b><small>15 başvuru</small></li>
+          <li><i class="premium"></i><span>Premium</span><b>%15</b><small>11 başvuru</small></li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="chart-card">
+      <div class="card-title"><h3>Başvuru Durumu Dağılımı</h3><p>Toplam başvurularınızın mevcut durumu</p></div>
+      <div class="progress-list">
+        <div><span>Onaylandı <b>%65</b></span><i><em class="approved-bar" style="width: 65%"></em></i></div>
+        <div><span>Reddedildi <b>%16</b></span><i><em class="rejected-bar" style="width: 16%"></em></i></div>
+        <div><span>Revizyonda <b>%11</b></span><i><em class="revision-bar" style="width: 11%"></em></i></div>
+        <div><span>Beklemede <b>%8</b></span><i><em class="pending-bar" style="width: 8%"></em></i></div>
+      </div>
+    </article>
+  </div>
+
+  <article class="applications-card">
+    <div class="card-title table-title"><div><h3>Son Oluşturulan Başvurular</h3><p>En son oluşturduğunuz kart başvuruları</p></div><a routerLink="/officer/applications">Tüm Başvuruları Gör →</a></div>
+    <div class="filters"><input type="search" placeholder="Başvuru no, müşteri veya kart tipi ara..." /><div><button class="selected">Tümü</button><button>Beklemede</button><button>Onaylandı</button><button>Reddedildi</button><button>Revizyonda</button></div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>BAŞVURU NO</th><th>MÜŞTERİ</th><th>KART TİPİ</th><th>TARİH</th><th>DURUM</th></tr></thead>
+        <tbody>
+          @for (item of applications(); track item.number) {
+            <tr><td><a routerLink="/officer/applications">{{ item.number }}</a></td><td>{{ item.customer }}</td><td>{{ item.type }}</td><td>{{ item.date }}</td><td><span class="badge" [class]="'badge ' + item.className">● {{ item.status }}</span></td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>

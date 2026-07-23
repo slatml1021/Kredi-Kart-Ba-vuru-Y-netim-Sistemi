@@ -1,0 +1,45 @@
+<section class="dashboard-page">
+  <div class="page-heading">
+    <div><p>MEMUR PANELİ</p><h1>Merhaba, {{ authService.currentUser()?.fullName }}</h1><span>Başvurularınızın güncel durumunu ve performansını buradan takip edebilirsiniz.</span></div>
+    <a routerLink="/officer/customers">Müşteri Sorgula</a>
+  </div>
+
+  <div class="section-heading"><h2>Dönemsel Başvuru Sayıları</h2><p>Oluşturduğunuz başvuruların dönem bazlı özeti</p></div>
+  <div class="metric-grid period-grid">
+    @for (card of periodCards; track card.label) { <article><span>{{ card.label }}</span><b>{{ card.value }}</b><small>{{ card.detail }}</small></article> }
+  </div>
+
+  <div class="section-heading"><h2>Başvuru Durumları</h2><p>Oluşturduğunuz başvuruların güncel dağılımı</p></div>
+  <div class="metric-grid status-grid">
+    @for (card of statusCards; track card.label) { <article><span>{{ card.label }}</span><b>{{ card.value }}</b></article> }
+  </div>
+
+  <div class="section-heading"><h2>Başvuru Analizleri</h2><p>Kart tercihleri ve başvuruların yüzdesel dağılımı</p></div>
+  <div class="analysis-grid">
+    <article class="chart-card">
+      <div class="card-title"><h3>Kart Tipi Dağılımı</h3><p>Toplam {{ allApplications().length }} başvuru</p></div>
+      <div class="donut-area">
+        <div class="donut" [style.background]="donutBackground()"><b>%{{ primaryCardType().percentage }}</b><span>{{ primaryCardType().name }}</span></div>
+        <ul>@for (item of cardTypeDistribution(); track item.name) { <li><i [class]="item.className"></i><span>{{ item.name }}</span><b>%{{ item.percentage }}</b><small>{{ item.count }} başvuru</small></li> }</ul>
+      </div>
+    </article>
+    <article class="chart-card">
+      <div class="card-title"><h3>Başvuru Durumu Dağılımı</h3><p>Toplam başvurularınızın mevcut durumu</p></div>
+      <div class="progress-list">
+        @for (item of statusDistribution(); track item.status) { <div><span>{{ item.label }} <b>%{{ item.percentage }}</b></span><i><em [class]="item.className" [style.width.%]="item.percentage"></em></i></div> }
+      </div>
+    </article>
+  </div>
+
+  <article class="applications-card">
+    <div class="card-title table-title"><div><h3>Son Oluşturulan Başvurular</h3><p>En son oluşturduğunuz kart başvuruları</p></div><a routerLink="/officer/applications">Tüm Başvuruları Gör →</a></div>
+    <div class="filters">
+      <input type="search" placeholder="Başvuru no, müşteri veya kart tipi ara..." (input)="dashboardSearch.set($any($event.target).value)" />
+      <div>@for (item of filterOptions; track item.value) { <button [class.selected]="dashboardStatus() === item.value" (click)="dashboardStatus.set(item.value)">{{ item.label }}</button> }</div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>BAŞVURU NO</th><th>MÜŞTERİ</th><th>KART TİPİ</th><th>TARİH</th><th>DURUM</th></tr></thead><tbody>
+      @for (item of applications(); track item.number) { <tr><td><a [routerLink]="['/officer/applications', item.id]">{{ item.number }}</a></td><td>{{ item.customer }}</td><td>{{ item.type }}</td><td>{{ item.date }}</td><td><span class="badge" [class]="'badge ' + item.className">● {{ item.status }}</span></td></tr> }
+      @empty { <tr><td colspan="5">Filtreye uygun başvuru bulunmuyor.</td></tr> }
+    </tbody></table></div>
+  </article>
+</section>

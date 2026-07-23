@@ -1,0 +1,26 @@
+:host { display: block; min-height: 100vh; color: #10223a; }
+.application-shell { min-height: 100vh; display: grid; grid-template-columns: 250px 1fr; background: #f4f6f8; }
+.sidebar { position: fixed; inset: 0 auto 0 0; width: 250px; padding: 30px 18px 22px; display: flex; flex-direction: column; color: #aab7c5; background: linear-gradient(180deg, #071a31 0%, #082442 100%); }
+.brand { padding: 0 10px 25px; border-bottom: 1px solid rgba(255,255,255,.1); }
+.brand b, .brand span { display: block; }
+.brand b { color: #fff; font-size: 15px; }
+.brand span { margin-top: 3px; font-size: 11px; }
+nav { margin-top: 20px; }
+nav p { margin: 27px 10px 9px; color: #72849a; font-size: 9px; font-weight: 800; letter-spacing: .18em; }
+nav a { min-height: 42px; margin: 4px 0; padding: 0 11px; display: flex; align-items: center; gap: 10px; border-radius: 6px; color: #b7c2cf; font-size: 13px; font-weight: 600; text-decoration: none; }
+nav a:hover, nav a.active { color: #fff; background: rgba(255,255,255,.11); }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: #8b9bac; }
+nav a.active .dot { background: #d1a83c; }
+.system-status { margin-top: auto; padding: 17px 9px 0; border-top: 1px solid rgba(255,255,255,.1); font-size: 10px; }
+.system-status i { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #31ad76; }
+.system-status span { float: right; }
+.workspace { grid-column: 2; min-width: 0; }
+header { height: 72px; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #dde3e9; background: #fff; color: #7b8795; font-size: 12px; }
+.account { display: flex; align-items: center; gap: 10px; color: #14243b; }
+.avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #0b315b; font-size: 11px; font-weight: 800; }
+.account b, .account small { display: block; }
+.account b { font-size: 12px; }
+.account small { margin-top: 2px; color: #7b8795; font-size: 10px; }
+.account button { height: 36px; margin-left: 12px; padding: 0 15px; border: 1px solid #d2dae3; border-radius: 6px; background: #fff; color: #1d2d42; font-weight: 700; cursor: pointer; }
+main { min-height: calc(100vh - 72px); }
+@media (max-width: 900px) { .application-shell { grid-template-columns: 78px 1fr; } .sidebar { width: 78px; padding-inline: 10px; } .brand b { font-size: 10px; } .brand span, nav p, nav a:not(.active) { display: none; } nav a { justify-content: center; padding: 0; } .system-status { font-size: 0; } .system-status span { display: none; } .workspace { grid-column: 2; } header { padding-inline: 18px; } header > span { display: none; } }

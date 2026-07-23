@@ -1,0 +1,19 @@
+# .NET
+**/bin/
+**/obj/
+*.db
+*.db-shm
+*.db-wal
+
+# Angular / Node
+**/node_modules/
+**/.angular/
+**/dist/
+
+# Local tooling
+.tooling/
+.DS_Store
+
+# Editors
+.idea/
+**/.vscode/*.log

@@ -1,0 +1,50 @@
+<section class="application-page">
+  <div class="page-title"><div><p>MEMUR PANELİ / KART BAŞVURUSU</p><h1>Yeni Kart Başvurusu</h1><span>Müşteriyi seçin, kart ve limit tercihlerini belirleyerek başvuruyu tamamlayın.</span></div></div>
+
+  @if (step() < 4) {
+    <ol class="stepper">
+      <li [class.active]="step() >= 1"><i>1</i><div><b>Müşteri Seçimi</b><span>Kimlik ve finansal bilgiler</span></div></li>
+      <li [class.active]="step() >= 2"><i>2</i><div><b>Kart ve Limit</b><span>Ürün tercihleri</span></div></li>
+      <li [class.active]="step() >= 3"><i>3</i><div><b>Onay</b><span>Başvuru özeti</span></div></li>
+    </ol>
+  }
+
+  @if (errorMessage()) { <div class="error-message" role="alert">{{ errorMessage() }}</div> }
+
+  @if (step() === 1) {
+    <article class="panel">
+      <div class="panel-title"><span>01</span><div><h2>Başvuru Yapılacak Müşteri</h2><p>TC Kimlik No, müşteri numarası, telefon veya ad soyad ile sorgulayın.</p></div></div>
+      <form class="search-form" (ngSubmit)="searchCustomer()"><input [formControl]="query" placeholder="Müşteri arama kriteri" /><button [disabled]="isLoading()">{{ isLoading() ? 'Sorgulanıyor...' : 'Müşteri Sorgula' }}</button></form>
+      @if (query.touched && query.invalid) { <small>Bir arama kriteri giriniz.</small> }
+      @if (searchResults().length > 0) {
+        <div class="results">@for (customer of searchResults(); track customer.id) { <button type="button" (click)="chooseCustomer(customer)"><span class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</span><span><b>{{ customer.firstName }} {{ customer.lastName }}</b><small>{{ customer.customerNumber }} · {{ customer.nationalIdentityNumber }}</small></span><i>Seç →</i></button> }</div>
+      }
+      <div class="new-customer">Müşteri sistemde kayıtlı değil mi? <a routerLink="/officer/customers/new">Yeni müşteri oluşturun →</a></div>
+    </article>
+  }
+
+  @if (step() === 2 && selectedCustomer(); as customer) {
+    <div class="selected-customer"><div class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</div><div><b>{{ customer.firstName }} {{ customer.lastName }}</b><span>{{ customer.customerNumber }} · {{ customer.nationalIdentityNumber }}</span></div><button type="button" (click)="goBack()">Müşteriyi Değiştir</button></div>
+    <article class="panel">
+      <div class="panel-title"><span>02</span><div><h2>Kart Tipi ve Talep Edilen Limit</h2><p>Müşteriye uygun kart ürününü seçin ve başvuru limitini belirleyin.</p></div></div>
+      <div class="limit-summary"><div><span>AYLIK NET GELİR</span><b>{{ formatCurrency(customer.monthlyNetIncome) }}</b></div><div><span>DİĞER BANKA KART LİMİTİ</span><b>{{ formatCurrency(customer.otherBankTotalCardLimit) }}</b></div><div class="available"><span>KULLANILABİLİR LİMİT</span><b>{{ formatCurrency(availableLimit()) }}</b></div></div>
+      <div class="card-types">@for (cardType of cardTypes(); track cardType.id) { <button type="button" [class.selected]="applicationForm.controls.cardTypeId.value === cardType.id" (click)="chooseCardType(cardType)"><i></i><b>{{ cardType.name }}</b><span>{{ formatCurrency(cardType.minimumLimit ?? 0) }} – {{ formatCurrency(cardType.maximumLimit ?? availableLimit()) }}</span><em>{{ applicationForm.controls.cardTypeId.value === cardType.id ? '✓ Seçildi' : 'Kartı Seç' }}</em></button> }</div>
+      <form [formGroup]="applicationForm"><label>Talep Edilen Kart Limiti (₺)<input formControlName="requestedLimit" type="number" min="1" step="500" /><span>En fazla {{ formatCurrency(availableLimit()) }} talep edilebilir.</span></label></form>
+    </article>
+    <div class="actions"><button class="secondary" type="button" (click)="goBack()">Geri</button><button type="button" (click)="goToSummary()">Başvuru Özetine Geç →</button></div>
+  }
+
+  @if (step() === 3 && selectedCustomer(); as customer) {
+    <article class="panel summary-panel">
+      <div class="panel-title"><span>03</span><div><h2>Başvuru Özeti ve Onay</h2><p>Göndermeden önce tüm bilgileri kontrol edin.</p></div></div>
+      <div class="summary-section"><h3>Müşteri Bilgileri</h3><dl><div><dt>Müşteri</dt><dd>{{ customer.firstName }} {{ customer.lastName }}</dd></div><div><dt>Müşteri No</dt><dd>{{ customer.customerNumber }}</dd></div><div><dt>TC Kimlik No</dt><dd>{{ customer.nationalIdentityNumber }}</dd></div></dl></div>
+      <div class="summary-section"><h3>Kart ve Limit Bilgileri</h3><dl><div><dt>Kart Tipi</dt><dd>{{ selectedCardType()?.name }}</dd></div><div><dt>Talep Edilen Limit</dt><dd class="gold">{{ formatCurrency(applicationForm.controls.requestedLimit.value) }}</dd></div><div><dt>Kullanılabilir Limit</dt><dd>{{ formatCurrency(availableLimit()) }}</dd></div></dl></div>
+      <div class="notice"><b>Değerlendirme Süreci</b><span>Başvuru gönderildiğinde “Beklemede” durumuyla müdür değerlendirme kuyruğuna aktarılacaktır.</span></div>
+    </article>
+    <div class="actions"><button class="secondary" type="button" (click)="goBack()">Bilgileri Düzenle</button><button type="button" (click)="submit()" [disabled]="isLoading()">{{ isLoading() ? 'Gönderiliyor...' : 'Başvuruyu Gönder' }}</button></div>
+  }
+
+  @if (step() === 4 && createdApplication(); as application) {
+    <article class="success-panel"><div class="success-icon">✓</div><p>BAŞVURU BAŞARIYLA OLUŞTURULDU</p><h2>Kart başvurusu değerlendirmeye gönderildi</h2><span>Başvuru numarasını kullanarak süreci takip edebilirsiniz.</span><div class="application-number"><small>BAŞVURU NUMARASI</small><b>{{ application.applicationNumber }}</b></div><dl><div><dt>Müşteri</dt><dd>{{ application.customerFullName }}</dd></div><div><dt>Kart Tipi</dt><dd>{{ application.cardTypeName }}</dd></div><div><dt>Talep Edilen Limit</dt><dd>{{ formatCurrency(application.requestedLimit) }}</dd></div><div><dt>Durum</dt><dd class="pending">● Beklemede</dd></div></dl><div class="success-actions"><a [routerLink]="['/officer/applications', application.id]">Başvuru Detayını Gör</a><a class="primary" routerLink="/officer/customers">Yeni İşlem</a></div></article>
+  }
+</section>

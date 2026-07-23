@@ -1,0 +1,35 @@
+<section class="customer-page">
+  <div class="page-title">
+    <div>
+      <p>MEMUR PANELİ / MÜŞTERİ İŞLEMLERİ</p>
+      <h1>Yeni Müşteri Oluştur</h1>
+      <span>Kart başvurusu öncesinde müşterinin temel ve finansal bilgilerini kaydedin.</span>
+    </div>
+    <a routerLink="/officer/customers">← Müşteri Sorgulamaya Dön</a>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <article class="form-card">
+      <div class="card-title"><span>01</span><div><h2>Kimlik ve İletişim Bilgileri</h2><p>Zorunlu alanları müşteriden teyit ederek doldurun.</p></div></div>
+      <div class="form-grid">
+        <label>TC Kimlik Numarası<input formControlName="nationalIdentityNumber" inputmode="numeric" maxlength="11" placeholder="11 haneli TC Kimlik No" />@if (form.controls.nationalIdentityNumber.touched && form.controls.nationalIdentityNumber.invalid) { <small>11 haneli geçerli bir TC Kimlik No giriniz.</small> }</label>
+        <label>Telefon Numarası<input formControlName="phoneNumber" inputmode="tel" maxlength="11" placeholder="05XXXXXXXXX" />@if (form.controls.phoneNumber.touched && form.controls.phoneNumber.invalid) { <small>11 haneli telefon numarası giriniz.</small> }</label>
+        <label>Ad<input formControlName="firstName" placeholder="Müşteri adı" />@if (form.controls.firstName.touched && form.controls.firstName.invalid) { <small>Ad alanı zorunludur.</small> }</label>
+        <label>Soyad<input formControlName="lastName" placeholder="Müşteri soyadı" />@if (form.controls.lastName.touched && form.controls.lastName.invalid) { <small>Soyad alanı zorunludur.</small> }</label>
+        <label class="wide">E-posta Adresi<input formControlName="emailAddress" type="email" placeholder="ornek@eposta.com" />@if (form.controls.emailAddress.touched && form.controls.emailAddress.invalid) { <small>Geçerli bir e-posta adresi giriniz.</small> }</label>
+      </div>
+    </article>
+
+    <article class="form-card">
+      <div class="card-title"><span>02</span><div><h2>Finansal Bilgiler</h2><p>Limit hesaplamasında kullanılacak güncel tutarları girin.</p></div></div>
+      <div class="form-grid">
+        <label>Aylık Net Gelir (₺)<input formControlName="monthlyNetIncome" type="number" min="1" step="100" />@if (form.controls.monthlyNetIncome.touched && form.controls.monthlyNetIncome.invalid) { <small>Aylık net gelir sıfırdan büyük olmalıdır.</small> }</label>
+        <label>Diğer Banka Toplam Kart Limiti (₺)<input formControlName="otherBankTotalCardLimit" type="number" min="0" step="100" />@if (form.controls.otherBankTotalCardLimit.touched && form.controls.otherBankTotalCardLimit.invalid) { <small>Tutar negatif olamaz.</small> }</label>
+      </div>
+      <div class="information"><b>Bilgilendirme</b><span>Bu bilgiler yalnızca başvuru değerlendirmesi ve müşteri limitinin hesaplanması amacıyla kullanılacaktır.</span></div>
+    </article>
+
+    @if (errorMessage()) { <div class="error-message" role="alert">{{ errorMessage() }}</div> }
+    <div class="actions"><a routerLink="/officer/customers">Vazgeç</a><button type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Kaydediliyor...' : 'Müşteriyi Kaydet' }}</button></div>
+  </form>
+</section>

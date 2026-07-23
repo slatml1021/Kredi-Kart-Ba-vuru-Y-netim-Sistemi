@@ -1,0 +1,62 @@
+<main class="login-page">
+  <section class="brand-panel" aria-label="Uygulama bilgisi">
+    <h1>Kredi Kartı<br />Başvuru Sistemi</h1>
+
+    <div class="simulation-note">
+      <span aria-hidden="true"></span>
+      Bankacılık Süreç Simülasyonu
+    </div>
+  </section>
+
+  <section class="form-panel">
+    <form [formGroup]="loginForm" (ngSubmit)="submit()" novalidate>
+      <p class="eyebrow">PERSONEL ERİŞİMİ</p>
+      <h2>Personel Girişi</h2>
+
+      <div class="field">
+        <label for="registrationNumber">Personel Sicil Numarası</label>
+        <input
+          id="registrationNumber"
+          type="text"
+          autocomplete="username"
+          placeholder="Sicil numaranızı girin"
+          formControlName="registrationNumber"
+          [class.invalid]="loginForm.controls.registrationNumber.touched && loginForm.controls.registrationNumber.invalid"
+        />
+        @if (loginForm.controls.registrationNumber.touched && loginForm.controls.registrationNumber.invalid) {
+          <small>Sicil numarası zorunludur.</small>
+        }
+      </div>
+
+      <div class="field">
+        <label for="password">Şifre</label>
+        <div class="password-field">
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="current-password"
+            placeholder="Şifrenizi girin"
+            formControlName="password"
+            [class.invalid]="loginForm.controls.password.touched && loginForm.controls.password.invalid"
+          />
+          <button type="button" class="show-password" (click)="togglePasswordVisibility()">
+            {{ showPassword() ? 'Gizle' : 'Göster' }}
+          </button>
+        </div>
+        @if (loginForm.controls.password.touched && loginForm.controls.password.invalid) {
+          <small>Şifre zorunludur ve en az 8 karakter olmalıdır.</small>
+        }
+      </div>
+
+      @if (loginError()) {
+        <div class="login-error" role="alert">
+          <b aria-hidden="true">!</b>
+          {{ loginError() }}
+        </div>
+      }
+
+      <button class="login-button" type="submit">Giriş Yap</button>
+      <p class="security-note">Yetkisiz erişim girişimleri kayıt altına alınmaktadır.</p>
+    </form>
+  </section>
+</main>

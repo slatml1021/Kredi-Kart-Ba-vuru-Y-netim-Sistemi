@@ -1,0 +1,21 @@
+:host { display: block; }
+.customer-page { padding: 31px; color: #10243e; }
+.page-title { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
+.page-title p { margin: 0 0 9px; color: #a17c22; font-size: 9px; font-weight: 800; letter-spacing: .17em; }
+.page-title h1 { margin: 0; color: #0b2a4d; font-size: 28px; letter-spacing: -.04em; }
+.page-title span { display: block; margin-top: 8px; color: #7c8998; font-size: 11px; }
+.page-title a, .actions a { color: #54677c; font-size: 11px; font-weight: 800; text-decoration: none; }
+form { max-width: 980px; }
+.form-card { margin-bottom: 15px; overflow: hidden; border: 1px solid #dbe1e7; border-radius: 7px; background: #fff; }
+.card-title { display: flex; align-items: center; gap: 12px; padding: 17px 19px; border-bottom: 1px solid #e1e6eb; }
+.card-title > span { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; color: #ad8425; background: #f5edd7; font-size: 10px; font-weight: 900; }
+.card-title h2 { margin: 0; font-size: 14px; }.card-title p { margin: 4px 0 0; color: #929ca8; font-size: 10px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 22px; padding: 21px; }
+label { color: #263c55; font-size: 10px; font-weight: 800; }.wide { grid-column: 1 / -1; }
+input { box-sizing: border-box; width: 100%; height: 43px; margin-top: 8px; padding: 0 12px; border: 1px solid #d3dbe4; border-radius: 5px; color: #243950; background: #fff; font: inherit; font-weight: 500; outline: none; }
+input:focus { border-color: #224f7d; box-shadow: 0 0 0 3px rgba(34,79,125,.09); }
+small { display: block; margin-top: 6px; color: #b04e4e; font-weight: 500; }
+.information { display: flex; gap: 14px; margin: 0 21px 21px; padding: 13px 15px; border-left: 3px solid #c29b3c; color: #6f633d; background: #fbf8ee; font-size: 10px; }.information b { white-space: nowrap; }
+.error-message { margin-bottom: 15px; padding: 13px 16px; border: 1px solid #eccaca; border-radius: 6px; color: #a64c4c; background: #fff1f1; font-size: 11px; }
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: 20px; padding-top: 4px; }.actions button { min-width: 170px; height: 43px; border: 0; border-radius: 5px; color: #fff; background: #08294c; font-weight: 800; cursor: pointer; }.actions button:disabled { opacity: .65; }
+@media (max-width: 750px) { .customer-page { padding: 20px; }.page-title { align-items: flex-start; flex-direction: column; gap: 16px; }.form-grid { grid-template-columns: 1fr; }.wide { grid-column: auto; }.information { flex-direction: column; gap: 4px; } }

@@ -1,0 +1,47 @@
+<section class="customer-page">
+  <div class="page-title">
+    <div><p>MEMUR PANELİ / MÜŞTERİ İŞLEMLERİ</p><h1>Müşteri Sorgulama</h1><span>Müşteriyi TC Kimlik No, müşteri numarası, telefon veya ad soyad ile arayın.</span></div>
+    <a routerLink="/officer/customers/new">Yeni Müşteri Oluştur</a>
+  </div>
+
+  <article class="search-card">
+    <div class="card-title"><h2>Müşteri Bilgileri ile Sorgula</h2><p>En az bir arama kriteri girilmelidir.</p></div>
+    <form (ngSubmit)="search()">
+      <label for="customerQuery">Arama kriteri</label>
+      <div class="search-row">
+        <input id="customerQuery" [formControl]="query" placeholder="TC Kimlik No, müşteri no, telefon veya ad soyad" />
+        <button type="submit" [disabled]="isLoading()">{{ isLoading() ? 'Sorgulanıyor...' : 'Müşteri Sorgula' }}</button>
+      </div>
+      @if (query.touched && query.invalid) { <small>Bir arama kriteri giriniz.</small> }
+    </form>
+  </article>
+
+  @if (errorMessage()) { <div class="error-message" role="alert">{{ errorMessage() }}</div> }
+
+  @if (hasSearched() && customers().length === 0 && !errorMessage()) {
+    <article class="empty-state"><div>⌕</div><h2>Müşteri bulunamadı</h2><p>Arama kriterini kontrol edin veya yeni müşteri oluşturun.</p></article>
+  }
+
+  @if (customers().length > 0) {
+    <article class="results-card">
+      <div class="card-title"><h2>Arama Sonuçları</h2><p>{{ customers().length }} müşteri bulundu.</p></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>MÜŞTERİ NO</th><th>AD SOYAD</th><th>TC KİMLİK NO</th><th>TELEFON</th><th>DURUM</th><th></th></tr></thead>
+          <tbody>
+            @for (customer of customers(); track customer.id) {
+              <tr>
+                <td><b>{{ customer.customerNumber }}</b></td>
+                <td>{{ customer.firstName }} {{ customer.lastName }}</td>
+                <td>{{ customer.nationalIdentityNumber }}</td>
+                <td>{{ customer.phoneNumber }}</td>
+                <td><span class="status" [class.passive]="!customer.isActive">● {{ customer.isActive ? 'Aktif' : 'Pasif' }}</span></td>
+                <td><a [routerLink]="['/officer/customers', customer.id]">Müşteri Detayı →</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+  }
+</section>
