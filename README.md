@@ -88,30 +88,3 @@ kart-basvuru-ui/
 **Sıla Temel**
 
 Yazılım Mühendisliği Öğrencisi
-
-```
-
----
-
-## Bir de sana tavsiyem
-
-GitHub'da şu dosyaları da ekleyelim:
-
-- 📷 Login ekranı
-- 📷 Dashboard
-- 📷 Başvuru oluşturma
-- 📷 Müşteri detay
-
-Ekran görüntüleri olan bir repo, sadece kod bulunan bir repodan çok daha profesyonel görünür.
-
-### Ayrıca bir şey dikkatimi çekti 👀
-
-Commit çıktında bunlar vardı:
-
-- `DashboardRepository 2.cs`
-- `dashboard-api.service 2.ts`
-- `officer-dashboard 2.html`
-
-Bunlar muhtemelen yanlışlıkla oluşmuş kopya dosyalar. İlk fırsatta bunları temizlemeni öneririm. Repo çok daha düzenli görünür.
-
-💡 İstersen bu projeyi GitHub'da gerçekten kurumsal görünen bir seviyeye çıkaralım. README'yi rozetler (badges), mimari diyagramı, API yapısı, veritabanı şeması ve ekran görüntüleriyle zenginleştirebiliriz. Bu, portfolyon ve staj/iş başvurularında çok daha güçlü bir izlenim bırakır.
