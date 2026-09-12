@@ -1,40 +1,67 @@
-<div class="application-shell">
-  <aside class="sidebar">
+<div class="application-shell" [class.sidebar-open]="sidebarOpen()">
+  @if (sidebarOpen()) { <button type="button" class="sidebar-backdrop" (click)="closeSidebar()" aria-label="Menüyü kapat"></button> }
+  <aside id="application-sidebar" class="sidebar" [attr.aria-hidden]="!sidebarOpen()">
     <div class="brand">
-      <b>Kredi Kartı Başvuru</b>
-      <span>Sistemi</span>
+      <div><b>Kredi Kartı Başvuru</b><span>Sistemi</span></div>
+      <button type="button" class="sidebar-close" (click)="closeSidebar()" aria-label="Menüyü kapat" title="Menüyü Kapat">‹</button>
     </div>
 
     <nav aria-label="Ana menü">
-      <a [routerLink]="mode() === 'officer' ? '/officer/dashboard' : '/manager/dashboard'" routerLinkActive="active">
-        <span class="dot"></span> Dashboard
+      <a [routerLink]="mode() === 'officer' ? '/officer/dashboard' : '/manager/dashboard'" (click)="closeSidebar()" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" title="Ana Sayfa">
+        <span class="dot"></span><span class="nav-label">Ana Sayfa</span>
       </a>
 
       @if (mode() === 'officer') {
         <p>MÜŞTERİ İŞLEMLERİ</p>
-        <a routerLink="/officer/customers" routerLinkActive="active"><span class="dot"></span> Müşteri Sorgulama</a>
+        <a routerLink="/officer/customers" (click)="closeSidebar()" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" title="Müşteriler"><span class="dot"></span><span class="nav-label">Müşteriler</span></a>
+        <a routerLink="/officer/customers/search" (click)="closeSidebar()" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" title="Müşteri Sorgulama"><span class="dot"></span><span class="nav-label">Müşteri Sorgulama</span></a>
         <p>BAŞVURULAR</p>
-        <a routerLink="/officer/applications/new" routerLinkActive="active"><span class="dot"></span> Yeni Başvuru</a>
-        <a routerLink="/officer/applications" routerLinkActive="active"><span class="dot"></span> Başvurularım</a>
+        <a routerLink="/officer/work-queue" (click)="closeSidebar()" routerLinkActive="active" title="İşlerim"><span class="dot"></span><span class="nav-label">İşlerim</span></a>
+        <a routerLink="/officer/applications/new" (click)="closeSidebar()" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" title="Yeni Başvuru"><span class="dot"></span><span class="nav-label">Yeni Başvuru</span></a>
+        <a routerLink="/officer/applications" (click)="closeSidebar()" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" title="Başvurular"><span class="dot"></span><span class="nav-label">Başvurular</span></a>
+        <a routerLink="/officer/simulation" (click)="closeSidebar()" routerLinkActive="active" title="Başvuru Simülasyonu"><span class="dot"></span><span class="nav-label">Başvuru Simülasyonu</span></a>
+        <p>İLETİŞİM</p>
+        <a routerLink="/officer/chat" (click)="closeSidebar()" routerLinkActive="active" title="İletişim Merkezi"><span class="dot"></span><span class="nav-label">İletişim Merkezi</span></a>
       } @else {
         <p>BAŞVURU YÖNETİMİ</p>
-        <a routerLink="/manager/applications" routerLinkActive="active"><span class="dot"></span> Bekleyen Başvurular</a>
+        <a routerLink="/manager/workflow" (click)="closeSidebar()" routerLinkActive="active" title="İş Dağılımı ve Onaylar"><span class="dot"></span><span class="nav-label">İş Dağılımı ve Onaylar</span></a>
+        <a routerLink="/manager/operations" (click)="closeSidebar()" routerLinkActive="active" title="Operasyon ve Denetim"><span class="dot"></span><span class="nav-label">Operasyon ve Denetim</span></a>
+        <a routerLink="/manager/applications" (click)="closeSidebar()" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" title="Bekleyen Başvurular"><span class="dot"></span><span class="nav-label">Bekleyen Başvurular</span></a>
+        <a routerLink="/manager/all-applications" (click)="closeSidebar()" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" title="Tüm Başvurular"><span class="dot"></span><span class="nav-label">Tüm Başvurular</span></a>
+        <p>İLETİŞİM</p>
+        <a routerLink="/manager/chat" (click)="closeSidebar()" routerLinkActive="active" title="İletişim Merkezi"><span class="dot"></span><span class="nav-label">İletişim Merkezi</span></a>
       }
     </nav>
 
-    <div class="system-status"><i></i> Sistem aktif <span>v1.0</span></div>
+    <div class="sidebar-footer">
+      <div class="account">
+        <a class="account-profile" [routerLink]="mode() === 'officer' ? '/officer/profile' : '/manager/profile'" title="Profilimi aç">
+          <div class="avatar">{{ authService.currentUser()?.fullName?.slice(0, 2)?.toUpperCase() }}</div>
+          <div class="account-text"><b>{{ authService.currentUser()?.fullName }}</b><small>{{ mode() === 'officer' ? 'Memur' : 'Müdür' }}</small></div>
+        </a>
+        <button type="button" (click)="logout()">Çıkış</button>
+      </div>
+      <div class="system-status"><i></i> Sistem aktif <span>v1.1</span></div>
+    </div>
   </aside>
 
   <div class="workspace">
     <header>
-      <span>Kredi Kartı Başvuru Sistemi</span>
-      <div class="account">
-        <div class="avatar">{{ authService.currentUser()?.fullName?.slice(0, 2)?.toUpperCase() }}</div>
-        <div>
-          <b>{{ authService.currentUser()?.fullName }}</b>
-          <small>{{ mode() === 'officer' ? 'Memur' : 'Müdür' }}</small>
-        </div>
-        <button type="button" (click)="logout()">Çıkış</button>
+      <div class="header-navigation">
+        <button type="button" class="menu-button" (click)="toggleSidebar()" [attr.aria-expanded]="sidebarOpen()" aria-controls="application-sidebar" title="Menüyü Aç"><span aria-hidden="true">☰</span><b>Menü</b></button>
+        <span>Kredi Kartı Başvuru Sistemi</span>
+      </div>
+      <div class="notification-area">
+        <button type="button" class="notification-button" (click)="$event.stopPropagation(); notificationsOpen.set(!notificationsOpen())" aria-label="Bildirimleri aç">🔔 @if (unreadCount()) { <b>{{ unreadCount() }}</b> }</button>
+        @if (notificationsOpen()) {
+          <div class="notification-panel" (click)="$event.stopPropagation()"><h3>Bildirimler <span>{{ unreadCount() }} okunmadı</span></h3>
+            @if (unreadCount()) { <button type="button" class="mark-all" (click)="$event.stopPropagation(); markAllNotificationsRead()" [disabled]="isMarkingAll()">{{ isMarkingAll() ? 'İşaretleniyor...' : 'Tümünü okundu işaretle' }}</button> }
+            @if (notificationError()) { <p class="notification-error" role="alert"><span>{{ notificationError() }}</span><button type="button" aria-label="Uyarıyı kapat" (click)="$event.stopPropagation(); notificationError.set('')">×</button></p> }
+            @for (item of notifications().slice(0, 8); track item.id) {
+              <button type="button" [class.unread]="!item.isRead" (click)="openNotification(item)"><b>{{ item.title }} @if (!item.isRead) { <em>Okunmadı</em> }</b><span>{{ item.message }}</span><small>{{ notificationTime(item.createdAtUtc) }}</small></button>
+            } @empty { <p>Henüz bildirim yok.</p> }
+          </div>
+        }
       </div>
     </header>
 

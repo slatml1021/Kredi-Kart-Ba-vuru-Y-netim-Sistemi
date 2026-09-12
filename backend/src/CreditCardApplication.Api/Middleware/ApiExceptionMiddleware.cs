@@ -19,6 +19,11 @@ public sealed class ApiExceptionMiddleware(RequestDelegate next, ILogger<ApiExce
         {
             await WriteProblemAsync(context, StatusCodes.Status409Conflict, "İş kuralı ihlali", exception.Message);
         }
+        catch (CreditCardApplication.Application.Auth.AccountLockedException exception)
+        {
+            context.Response.Headers.RetryAfter = "600";
+            await WriteProblemAsync(context, StatusCodes.Status423Locked, "Hesap geçici olarak kilitlendi", exception.Message);
+        }
         catch (AuthenticationException exception)
         {
             await WriteProblemAsync(context, StatusCodes.Status401Unauthorized, "Kimlik doğrulama başarısız", exception.Message);

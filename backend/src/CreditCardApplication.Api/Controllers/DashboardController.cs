@@ -17,6 +17,10 @@ public sealed class DashboardController(DashboardService dashboardService) : Con
 
     [HttpGet("manager")]
     [Authorize(Roles = "Manager")]
-    public Task<ManagerDashboardResponse> Manager(CancellationToken cancellationToken) =>
-        dashboardService.GetManagerAsync(cancellationToken);
+    public Task<ManagerDashboardResponse> Manager(
+        [FromQuery] string period = "Week",
+        [FromQuery] int? month = null,
+        [FromQuery] int? year = null,
+        CancellationToken cancellationToken = default) =>
+        dashboardService.GetManagerAsync(period, month, year, cancellationToken);
 }

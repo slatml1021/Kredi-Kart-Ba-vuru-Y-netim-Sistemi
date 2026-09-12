@@ -1,0 +1,407 @@
+{
+  "info": {
+    "_postman_id": "275e8543-9aeb-4ba5-bd89-df84a05bdb8c",
+    "name": "KKBYS API Regression",
+    "description": "Kredi Kartı Başvuru Yönetim Sistemi için yerel API regresyon paketi. Klasörler Collection Runner ile sırayla çalıştırılmalıdır. Ana test verisini değiştiren işlemler yalnızca senaryo hesabında tutulmuştur.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 - Health",
+      "item": [
+        {
+          "name": "API Health - 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('API healthy', function () { pm.expect(pm.response.json().status).to.eql('healthy'); });"
+            ], "type": "text/javascript" }
+          }]
+        },
+        {
+          "name": "Anonymous Officer Dashboard - 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/dashboard/officer", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "officer"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Anonim erişim 401', function () { pm.response.to.have.status(401); });"], "type": "text/javascript" }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "01 - Authentication",
+      "item": [
+        {
+          "name": "Officer Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"registrationNumber\": \"{{officerRegistrationNumber}}\",\n  \"password\": \"{{officerPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test('Memur girişi 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
+              "pm.expect(body.user.roles).to.include('Officer');",
+              "pm.environment.set('officerToken', body.accessToken);"
+            ], "type": "text/javascript" }
+          }]
+        },
+        {
+          "name": "Manager Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"registrationNumber\": \"{{managerRegistrationNumber}}\",\n  \"password\": \"{{managerPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test('Müdür girişi 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
+              "pm.expect(body.user.roles).to.include('Manager');",
+              "pm.environment.set('managerToken', body.accessToken);"
+            ], "type": "text/javascript" }
+          }]
+        },
+        {
+          "name": "Scenario Officer Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"registrationNumber\": \"{{scenarioOfficerRegistrationNumber}}\",\n  \"password\": \"{{scenarioOfficerPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test('Senaryo memuru girişi 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.environment.set('scenarioOfficerToken', body.accessToken);"
+            ], "type": "text/javascript" }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "02 - Role Authorization",
+      "item": [
+        {
+          "name": "Officer Dashboard - 200",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/dashboard/officer", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "officer"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Memur dashboard 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Officer Cannot Access Manager Dashboard - 403",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/dashboard/manager", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "manager"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Memur müdür ekranına erişemez', function () { pm.response.to.have.status(403); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Manager Dashboard - 200",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/dashboard/manager", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "manager"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Müdür dashboard 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Manager Cannot Access Officer Dashboard - 403",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/dashboard/officer", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "officer"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Müdür memur dashboarduna erişemez', function () { pm.response.to.have.status(403); });"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+    {
+      "name": "03 - Customers and Applications",
+      "item": [
+        {
+          "name": "Customer List",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/customers/list", "host": ["{{baseUrl}}"], "path": ["api", "customers", "list"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test('Müşteri listesi 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.expect(body).to.be.an('array').and.not.empty;",
+              "pm.environment.set('customerId', body[0].id);"
+            ], "type": "text/javascript" }
+          }]
+        },
+        {
+          "name": "Customer Detail",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/customers/{{customerId}}/detail", "host": ["{{baseUrl}}"], "path": ["api", "customers", "{{customerId}}", "detail"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Müşteri detayı 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Customer Addresses",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/customers/{{customerId}}/addresses", "host": ["{{baseUrl}}"], "path": ["api", "customers", "{{customerId}}", "addresses"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Adres listesi 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Manager All Applications",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/card-applications/all", "host": ["{{baseUrl}}"], "path": ["api", "card-applications", "all"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test('Tüm başvurular 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.expect(body).to.be.an('array').and.not.empty;",
+              "pm.environment.set('applicationId', body[0].id);"
+            ], "type": "text/javascript" }
+          }]
+        },
+        {
+          "name": "Application Detail",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/card-applications/{{applicationId}}/detail", "host": ["{{baseUrl}}"], "path": ["api", "card-applications", "{{applicationId}}", "detail"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Başvuru detayı 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Explainable Pre-Assessment",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/card-applications/{{applicationId}}/pre-assessment", "host": ["{{baseUrl}}"], "path": ["api", "card-applications", "{{applicationId}}", "pre-assessment"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test('Ön değerlendirme 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Puan 0-100 aralığında', function () { const score = pm.response.json().score; pm.expect(score).to.be.within(0, 100); });"
+            ], "type": "text/javascript" }
+          }]
+        },
+        {
+          "name": "KKB Analysis",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/platform/customers/{{customerId}}/kkb-analysis", "host": ["{{baseUrl}}"], "path": ["api", "platform", "customers", "{{customerId}}", "kkb-analysis"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('KKB analizi 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+    {
+      "name": "04 - Requests, SLA and Rules",
+      "item": [
+        {
+          "name": "Supplementary Applications List",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/supplementary-card-applications", "host": ["{{baseUrl}}"], "path": ["api", "supplementary-card-applications"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Ek kart listesi 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Yanıt bir listedir', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Limit Change Requests List",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/cards/limit-increases", "host": ["{{baseUrl}}"], "path": ["api", "cards", "limit-increases"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Limit talepleri 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Yanıt bir listedir', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Manager SLA",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/platform/sla", "host": ["{{baseUrl}}"], "path": ["api", "platform", "sla"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('SLA 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Valid Limit Calculation",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"monthlyNetIncome\": 30000,\n  \"otherBankTotalCardLimit\": 10000\n}" },
+            "url": { "raw": "{{baseUrl}}/api/limits/calculate", "host": ["{{baseUrl}}"], "path": ["api", "limits", "calculate"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test('Limit hesabı 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('90.000 / 80.000 sonucu', function () { const body = pm.response.json(); pm.expect(body.theoreticalTotalLimit).to.eql(90000); pm.expect(body.availableLimit).to.eql(80000); });"
+            ], "type": "text/javascript" }
+          }]
+        },
+        {
+          "name": "Invalid Limit Calculation - 400",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"monthlyNetIncome\": 0,\n  \"otherBankTotalCardLimit\": -1\n}" },
+            "url": { "raw": "{{baseUrl}}/api/limits/calculate", "host": ["{{baseUrl}}"], "path": ["api", "limits", "calculate"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Geçersiz finansal veri 400', function () { pm.response.to.have.status(400); });"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+    {
+      "name": "05 - Notifications and Session",
+      "item": [
+        {
+          "name": "Scenario Officer Notifications",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{scenarioOfficerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/platform/notifications", "host": ["{{baseUrl}}"], "path": ["api", "platform", "notifications"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Bildirim listesi 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Yanıt bir listedir', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Scenario Officer Mark All Read",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{scenarioOfficerToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/platform/notifications/read-all", "host": ["{{baseUrl}}"], "path": ["api", "platform", "notifications", "read-all"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Tümünü okundu 204', function () { pm.response.to.have.status(204); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Scenario Officer Notifications Are Read",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{scenarioOfficerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/platform/notifications", "host": ["{{baseUrl}}"], "path": ["api", "platform", "notifications"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Bildirim listesi 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Okunmamış bildirim kalmadı', function () { const unread = pm.response.json().filter(x => x.isRead === false); pm.expect(unread.length).to.eql(0); });"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Scenario Officer Logout",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{scenarioOfficerToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Çıkış 204', function () { pm.response.to.have.status(204); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Revoked Token Cannot Access Profile - 401",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{scenarioOfficerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/platform/profile", "host": ["{{baseUrl}}"], "path": ["api", "platform", "profile"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('İptal edilen token 401', function () { pm.response.to.have.status(401); });"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+    {
+      "name": "06 - Customer Portal",
+      "item": [
+        {
+          "name": "Customer Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"customerNumber\": \"{{customerNumber}}\",\n  \"password\": \"{{customerPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customer-portal/login", "host": ["{{baseUrl}}"], "path": ["api", "customer-portal", "login"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test('Müşteri girişi 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
+              "pm.environment.set('customerToken', body.accessToken);"
+            ], "type": "text/javascript" }
+          }]
+        },
+        {
+          "name": "Customer Dashboard",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/customer-portal/dashboard", "host": ["{{baseUrl}}"], "path": ["api", "customer-portal", "dashboard"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Müşteri dashboard 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        }
+      ]
+    }
+  ]
+}

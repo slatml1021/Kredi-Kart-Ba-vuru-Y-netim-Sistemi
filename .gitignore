@@ -2,8 +2,11 @@
 **/bin/
 **/obj/
 *.db
+!backend/src/CreditCardApplication.Api/Data/address-catalog.db
 *.db-shm
 *.db-wal
+**/App_Data/
+backend/src/CreditCardApplication.Api/Storage/
 
 # Angular / Node
 **/node_modules/
@@ -13,7 +16,16 @@
 # Local tooling
 .tooling/
 .DS_Store
+.env
+.env.*
+!.env.example
+*.pfx
+*.pem
+*.trx
+**/TestResults/
+backend/src/CreditCardApplication.Api/appsettings.Development.before-*.json
 
 # Editors
 .idea/
+**/.vs/
 **/.vscode/*.log

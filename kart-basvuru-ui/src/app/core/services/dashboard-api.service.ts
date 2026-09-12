@@ -8,6 +8,18 @@ export interface OfficerDashboard {
   revisionApplications: number;
   approvedApplications: number;
   rejectedApplications: number;
+  recentRequests: RecentOfficerRequest[];
+}
+
+export interface RecentOfficerRequest {
+  requestType: 'CardApplication' | 'SupplementaryCard' | 'LimitIncrease' | 'LimitDecrease';
+  entityId: number;
+  referenceNumber: string;
+  customerId: number;
+  customerName: string;
+  description: string;
+  status: string;
+  createdAtUtc: string;
 }
 
 export interface ManagerDashboard {
@@ -15,6 +27,15 @@ export interface ManagerDashboard {
   approvedToday: number;
   rejectedToday: number;
   revisionApplications: number;
+  processedApplications: number;
+  approvedApplications: number;
+  rejectedApplications: number;
+  approvalRate: number;
+  rejectionRate: number;
+  totalApplications: number;
+  cardTypeDistribution: { cardType: string; count: number; percentage: number }[];
+  applicationTrend: { label: string; count: number }[];
+  officerPerformance: { officerName: string; createdApplications: number; approvalRate: number; averageProcessingMinutes: number }[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -25,7 +46,10 @@ export class DashboardApiService {
     return this.http.get<OfficerDashboard>('/api/dashboard/officer');
   }
 
-  manager(): Observable<ManagerDashboard> {
-    return this.http.get<ManagerDashboard>('/api/dashboard/manager');
+  manager(period = 'Week', month?: number, year?: number): Observable<ManagerDashboard> {
+    const params: Record<string, string | number> = { period };
+    if (month) params['month'] = month;
+    if (year) params['year'] = year;
+    return this.http.get<ManagerDashboard>('/api/dashboard/manager', { params });
   }
 }

@@ -11,6 +11,8 @@ using CreditCardApplication.Infrastructure.Applications;
 using CreditCardApplication.Infrastructure.Auditing;
 using CreditCardApplication.Infrastructure.Customers;
 using CreditCardApplication.Infrastructure.Persistence;
+using CreditCardApplication.Application.Platform;
+using CreditCardApplication.Infrastructure.Platform;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +35,9 @@ public static class DependencyInjection
         services.AddScoped<ICreditCardRepository, CreditCardRepository>();
         services.AddScoped<IDashboardRepository, DashboardRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IPlatformV2Service, PlatformV2Service>();
+        services.AddScoped<IContactVerificationSender, ContactVerificationSender>();
+        services.AddHostedService<CardFulfillmentWorker>();
         return services;
     }
 }

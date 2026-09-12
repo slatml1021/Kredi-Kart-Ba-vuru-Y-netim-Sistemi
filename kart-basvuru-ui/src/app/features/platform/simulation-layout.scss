@@ -1,0 +1,4 @@
+:host .page{box-sizing:border-box;width:100%;max-width:1180px}
+:host .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+:host .customer-panel,:host form,:host .result{padding:26px}
+@media(max-width:720px){:host .form-grid{grid-template-columns:1fr}}
