@@ -1,42 +1,57 @@
 import { Routes } from '@angular/router';
 import { authGuard, managerGuard, officerGuard } from './core/guards/auth.guard';
-import { Login } from './features/auth/login/login';
-import { ManagerDashboard } from './features/dashboard/manager-dashboard/manager-dashboard';
-import { OfficerDashboard } from './features/dashboard/officer-dashboard/officer-dashboard';
-import { CustomerSearch } from './features/customers/customer-search/customer-search';
-import { CustomerCreate } from './features/customers/customer-create/customer-create';
-import { CustomerDetail } from './features/customers/customer-detail/customer-detail';
-import { ApplicationCreate } from './features/applications/application-create/application-create';
-import { ApplicationList } from './features/applications/application-list/application-list';
-import { ApplicationReview } from './features/applications/application-review/application-review';
-import { ApplicationDetail } from './features/applications/application-detail/application-detail';
-import { CardDetail } from './features/cards/card-detail/card-detail';
-import { AppShell } from './shared/layout/app-shell/app-shell';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
-  { path: 'login', component: Login },
+  { path: 'login', loadComponent: () => import('./features/auth/login/login').then(m => m.Login) },
+  { path: 'customer/login', loadComponent: () => import('./features/customer-portal/customer-login').then(m => m.CustomerLogin) },
+  { path: 'customer/dashboard', loadComponent: () => import('./features/customer-portal/customer-dashboard').then(m => m.CustomerDashboard) },
   {
-    path: 'officer', component: AppShell, canActivate: [authGuard, officerGuard], data: { mode: 'officer' },
+    path: 'officer',
+    loadComponent: () => import('./shared/layout/app-shell/app-shell').then(m => m.AppShell),
+    canActivate: [authGuard, officerGuard],
+    data: { mode: 'officer' },
     children: [
-      { path: 'dashboard', component: OfficerDashboard },
-      { path: 'customers', component: CustomerSearch },
-      { path: 'customers/new', component: CustomerCreate },
-      { path: 'customers/:id', component: CustomerDetail },
-      { path: 'applications/new', component: ApplicationCreate },
-      { path: 'applications', component: ApplicationList },
-      { path: 'applications/:id', component: ApplicationDetail },
-      { path: 'cards/:id', component: CardDetail },
+      { path: 'dashboard', loadComponent: () => import('./features/dashboard/officer-dashboard/officer-dashboard').then(m => m.OfficerDashboard) },
+      { path: 'customers', loadComponent: () => import('./features/customers/customer-list/customer-list').then(m => m.CustomerList) },
+      { path: 'customers/search', loadComponent: () => import('./features/customers/customer-search/customer-search').then(m => m.CustomerSearch) },
+      { path: 'customers/new', loadComponent: () => import('./features/customers/customer-create/customer-create').then(m => m.CustomerCreate) },
+      { path: 'customers/:id', loadComponent: () => import('./features/customers/customer-detail/customer-detail').then(m => m.CustomerDetail) },
+      { path: 'customers/:id/addresses', loadComponent: () => import('./features/customers/customer-addresses/customer-addresses').then(m => m.CustomerAddresses) },
+      { path: 'applications/new', loadComponent: () => import('./features/applications/application-create/application-create').then(m => m.ApplicationCreate) },
+      { path: 'applications', loadComponent: () => import('./features/applications/application-list/application-list').then(m => m.ApplicationList) },
+      { path: 'work-queue', loadComponent: () => import('./features/platform/officer-work-queue').then(m => m.OfficerWorkQueue) },
+      { path: 'supplementary-applications', loadComponent: () => import('./features/platform/supplementary-applications').then(m => m.SupplementaryApplications) },
+      { path: 'supplementary-applications/:id', loadComponent: () => import('./features/platform/supplementary-application-detail').then(m => m.SupplementaryApplicationDetail) },
+      { path: 'simulation', loadComponent: () => import('./features/platform/simulation').then(m => m.Simulation) },
+      { path: 'chat', loadComponent: () => import('./features/platform/chat').then(m => m.Chat) },
+      { path: 'applications/:id', loadComponent: () => import('./features/applications/application-detail/application-detail').then(m => m.ApplicationDetail) },
+      { path: 'cards/:id', loadComponent: () => import('./features/cards/card-detail/card-detail').then(m => m.CardDetail) },
+      { path: 'profile', loadComponent: () => import('./features/profile/profile').then(m => m.Profile) },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
   {
-    path: 'manager', component: AppShell, canActivate: [authGuard, managerGuard], data: { mode: 'manager' },
+    path: 'manager',
+    loadComponent: () => import('./shared/layout/app-shell/app-shell').then(m => m.AppShell),
+    canActivate: [authGuard, managerGuard],
+    data: { mode: 'manager' },
     children: [
-      { path: 'dashboard', component: ManagerDashboard },
-      { path: 'applications', component: ApplicationReview },
-      { path: 'applications/:id', component: ApplicationDetail },
-      { path: 'cards/:id', component: CardDetail },
+      { path: 'dashboard', loadComponent: () => import('./features/dashboard/manager-dashboard/manager-dashboard').then(m => m.ManagerDashboard) },
+      { path: 'applications', loadComponent: () => import('./features/applications/application-review/application-review').then(m => m.ApplicationReview) },
+      { path: 'all-applications', loadComponent: () => import('./features/applications/application-list/application-list').then(m => m.ApplicationList) },
+      { path: 'workflow', loadComponent: () => import('./features/platform/manager-workflow').then(m => m.ManagerWorkflow) },
+      { path: 'operations', loadComponent: () => import('./features/platform/manager-operations').then(m => m.ManagerOperations) },
+      { path: 'applications/:id', loadComponent: () => import('./features/applications/application-detail/application-detail').then(m => m.ApplicationDetail) },
+      { path: 'customers/:id', loadComponent: () => import('./features/customers/customer-detail/customer-detail').then(m => m.CustomerDetail) },
+      { path: 'customers/:id/addresses', loadComponent: () => import('./features/customers/customer-addresses/customer-addresses').then(m => m.CustomerAddresses) },
+      { path: 'cards/:id', loadComponent: () => import('./features/cards/card-detail/card-detail').then(m => m.CardDetail) },
+      { path: 'limit-increases', loadComponent: () => import('./features/cards/limit-increase-review/limit-increase-review').then(m => m.LimitIncreaseReview) },
+      { path: 'limit-increases/:cardId', loadComponent: () => import('./features/cards/limit-increase-review/limit-increase-review').then(m => m.LimitIncreaseReview) },
+      { path: 'supplementary-applications', loadComponent: () => import('./features/platform/supplementary-applications').then(m => m.SupplementaryApplications) },
+      { path: 'supplementary-applications/:id', loadComponent: () => import('./features/platform/supplementary-application-detail').then(m => m.SupplementaryApplicationDetail) },
+      { path: 'chat', loadComponent: () => import('./features/platform/chat').then(m => m.Chat) },
+      { path: 'profile', loadComponent: () => import('./features/profile/profile').then(m => m.Profile) },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

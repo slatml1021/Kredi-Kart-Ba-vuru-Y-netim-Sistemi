@@ -12,6 +12,8 @@ using CreditCardApplication.Infrastructure;
 using CreditCardApplication.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +28,11 @@ builder.Services.AddScoped<DashboardService>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 var jwt = builder.Configuration.GetSection("Jwt");
-var jwtKey = jwt["Key"] ?? throw new InvalidOperationException("JWT anahtarı yapılandırılmamış.");
+var jwtKey = jwt["Key"];
+if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
+    throw new InvalidOperationException(
+        "JWT anahtarı yapılandırılmamış veya 32 bayttan kısa. Geliştirme ortamı için appsettings.Development.json, " +
+        "diğer ortamlar için Jwt__Key ortam değişkenini kullanın.");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -40,6 +46,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ClockSkew = TimeSpan.Zero
     });
 builder.Services.AddAuthorization();
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularDevelopment", policy =>
@@ -49,13 +68,33 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+using var databaseInstanceLock = AcquireDatabaseInstanceLock(app.Environment.ContentRootPath);
 
 app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseCors("AngularDevelopment");
+app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<SessionValidationMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 
 await app.Services.InitializeDatabaseAsync();
 
 app.Run();
+
+static FileStream AcquireDatabaseInstanceLock(string contentRootPath)
+{
+    var dataDirectory = Path.Combine(contentRootPath, "App_Data");
+    Directory.CreateDirectory(dataDirectory);
+    var lockPath = Path.Combine(dataDirectory, "credit-card-application.instance.lock");
+    try
+    {
+        return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+    }
+    catch (IOException exception)
+    {
+        throw new InvalidOperationException(
+            "Aynı proje veritabanını kullanan başka bir backend süreci zaten çalışıyor. " +
+            "Önce diğer 'dotnet run' sürecini durdurun; SQLite dosyasını iki API süreciyle açmayın.", exception);
+    }
+}

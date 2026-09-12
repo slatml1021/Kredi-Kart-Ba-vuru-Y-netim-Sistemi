@@ -18,7 +18,7 @@ cd "/Users/silatemel/Documents/Staj Projem/backend"
 dotnet run --project src/CreditCardApplication.Api
 ```
 
-API varsayılan olarak `http://localhost:5000` adresinde çalışır. İlk çalıştırmada SQLite veritabanı, roller, demo kullanıcılar ve kart tipleri otomatik oluşturulur.
+API varsayılan olarak `http://localhost:5057` adresinde çalışır. İlk çalıştırmada geliştirme ortamında SQLite veritabanı, roller, demo kullanıcılar ve kart tipleri otomatik oluşturulur.
 
 ```bash
 cd "/Users/silatemel/Documents/Staj Projem/kart-basvuru-ui"
@@ -28,7 +28,7 @@ npm start
 
 Arayüz: `http://localhost:4200`
 
-Angular geliştirme sunucusu `/api` isteklerini `proxy.conf.json` üzerinden `http://localhost:5000` adresindeki backend'e yönlendirir. Bu nedenle arayüz servislerinde sabit API adresi bulunmaz.
+Angular geliştirme sunucusu `/api` isteklerini `proxy.conf.json` üzerinden `http://localhost:5057` adresindeki backend'e yönlendirir. Bu nedenle arayüz servislerinde sabit API adresi bulunmaz.
 
 ## Demo hesaplar
 

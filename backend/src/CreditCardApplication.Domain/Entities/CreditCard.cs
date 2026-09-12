@@ -11,4 +11,12 @@ public sealed class CreditCard : BaseEntity
     public CardStatus Status { get; set; } = CardStatus.Inactive;
     public DateOnly IssueDate { get; set; }
     public DateOnly ExpiryDate { get; set; }
+    public decimal? RequestedNewLimit { get; set; }
+    public string? LimitIncreaseStatus { get; set; }
+    public string? LimitChangeType { get; set; }
+    public DateTime? LimitIncreaseRequestedAtUtc { get; set; }
+    public string? LimitIncreaseEvaluationNote { get; set; }
+    public DateTime? LimitIncreaseEvaluatedAtUtc { get; set; }
+    public int? LimitIncreaseEvaluatedByUserId { get; set; }
+    public CardFulfillment? Fulfillment { get; set; }
 }

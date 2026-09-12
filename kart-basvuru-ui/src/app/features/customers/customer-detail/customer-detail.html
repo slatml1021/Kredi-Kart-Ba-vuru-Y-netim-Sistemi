@@ -1,27 +1,106 @@
 <section class="customer-page">
-  <div class="page-title"><div><p>MEMUR PANELİ / MÜŞTERİ İŞLEMLERİ</p><h1>Müşteri Detayı</h1><span>Müşteri bilgilerini inceleyin ve kart başvurusu sürecini başlatın.</span></div><a routerLink="/officer/customers">← Müşteri Sorgulamaya Dön</a></div>
+  <div class="page-title"><div><p>{{ auth.currentUser()?.role === 'Manager' ? 'MÜDÜR PANELİ' : 'MEMUR PANELİ' }} / MÜŞTERİ İŞLEMLERİ</p><h1>Müşteri Detayı</h1><span>Müşteri bilgilerini, kartlarını ve başvuru geçmişini inceleyin.</span></div><a href="" (click)="goBack(); $event.preventDefault()">← Geldiğim Sayfaya Dön</a></div>
 
   @if (wasCreated) { <div class="success-message">✓ Müşteri kaydı başarıyla oluşturuldu.</div> }
   @if (isLoading()) { <article class="state-card">Müşteri bilgileri yükleniyor...</article> }
-  @if (errorMessage()) { <div class="error-message" role="alert">{{ errorMessage() }}</div> }
+  @if (errorMessage()) { <div class="error-message dismissible" role="alert">{{ errorMessage() }}<button type="button" aria-label="Uyarıyı kapat" (click)="errorMessage.set('')">×</button></div> }
 
   @if (customer(); as item) {
+    <article class="customer-360"><div class="customer-360-title"><div><small>MÜŞTERİ 360°</small><h2>Operasyon Özeti</h2></div><span [class.attention]="customerWarnings().length">{{ customerWarnings().length ? customerWarnings().length + ' kontrol gerekli' : 'İşleme uygun' }}</span></div><div class="customer-360-metrics"><div><b>{{ activeCardCount() }}</b><span>Aktif kart</span></div><div><b>{{ openApplicationCount() }}</b><span>Açık başvuru</span></div><div><b>{{ formatCurrency(item.ownBankTotalCardLimit) }}</b><span>Bu banka limiti</span></div><div><b>{{ formatCurrency(item.availableCardLimit) }}</b><span>Kullanılabilir limit</span></div></div>@if(customerWarnings().length){<ul>@for(warning of customerWarnings();track warning){<li>{{warning}}</li>}</ul>}@else{<p>Kimlik, iletişim, limit ve profil kontrolleri tamam. Müşteri ürün işlemlerine uygun görünüyor.</p>}</article>
     <article class="profile-card">
-      <div class="profile-head"><div class="avatar">{{ item.firstName.charAt(0) }}{{ item.lastName.charAt(0) }}</div><div><span>{{ item.customerNumber }}</span><h2>{{ item.firstName }} {{ item.lastName }}</h2><p class="status" [class.passive]="!item.isActive">● {{ item.isActive ? 'Aktif Müşteri' : 'Pasif Müşteri' }}</p></div><div><button type="button" class="edit-button" (click)="isEditing.set(true)">Bilgileri Düzenle</button><a [routerLink]="['/officer/applications/new']" [queryParams]="{ customerId: item.id }">Yeni Kart Başvurusu</a></div></div>
-      @if (updateMessage()) { <div class="success-message">✓ {{ updateMessage() }}</div> }
-      @if (isEditing()) { <form class="edit-form" [formGroup]="editForm" (ngSubmit)="save()"><label>Ad<input formControlName="firstName"></label><label>Soyad<input formControlName="lastName"></label><label>Telefon<input formControlName="phoneNumber"></label><label>E-posta<input formControlName="emailAddress"></label><label>Aylık net gelir<input type="number" formControlName="monthlyNetIncome"></label><label>Diğer banka kart limiti<input type="number" formControlName="otherBankTotalCardLimit"></label><div><button type="button" class="edit-button" (click)="isEditing.set(false)">Vazgeç</button><button type="submit" class="edit-button primary">Kaydet</button></div></form> }
-      <div class="detail-grid">
-        <div><label>TC KİMLİK NUMARASI</label><b>{{ item.nationalIdentityNumber }}</b></div>
-        <div><label>TELEFON NUMARASI</label><b>{{ item.phoneNumber }}</b></div>
-        <div><label>E-POSTA ADRESİ</label><b>{{ item.emailAddress }}</b></div>
-        <div><label>AYLIK NET GELİR</label><b>{{ formatCurrency(item.monthlyNetIncome) }}</b></div>
-        <div><label>DİĞER BANKA KART LİMİTİ</label><b>{{ formatCurrency(item.otherBankTotalCardLimit) }}</b></div>
-      </div>
+      <div class="profile-head"><div class="avatar">{{ item.firstName.charAt(0) }}{{ item.lastName.charAt(0) }}</div><div><span>{{ item.customerNumber }}</span><h2>{{ item.firstName }} {{ item.lastName }}</h2><p class="status" [class.passive]="!item.isActive">● {{ item.isActive ? 'Aktif Müşteri' : 'Pasif Müşteri' }}</p></div>@if(auth.currentUser()?.role !== 'Manager'){<div class="profile-actions"><button type="button" class="edit-button" (click)="isEditing.set(true)">Bilgileri Düzenle</button><button type="button" class="edit-button" (click)="toggleStatus()">{{ item.isActive ? 'Müşteriyi Pasife Al' : 'Müşteriyi Aktife Al' }}</button><a class="edit-button link-button" routerLink="/officer/simulation" [queryParams]="{ customerId: item.id }">Başvuru Simülasyonu</a>@if (item.isActive && item.isProfileComplete) { <a class="application-button" [routerLink]="['/officer/applications/new']" [queryParams]="{ customerId: item.id }">Yeni Kart Başvurusu</a> }</div>}</div>
+      @if (updateMessage()) { <div class="success-message dismissible">✓ {{ updateMessage() }}<button type="button" aria-label="Bildirimi kapat" (click)="updateMessage.set('')">×</button></div> }
+      @if (!item.isProfileComplete) { <div class="error-message"><b>Başvuru oluşturulamaz.</b> Eksik bilgiler: {{ item.missingProfileFields.join(', ') }}. Bilgileri güncelleyin ve iletişim kanallarını doğrulayın.</div> }
+      @if (isEditing()) {
+        <form class="edit-form" [formGroup]="editForm" (ngSubmit)="save()">
+          <label>Ad<input formControlName="firstName"></label><label>Soyad<input formControlName="lastName"></label>
+          <label>Doğum Tarihi<input type="date" formControlName="birthDate" [max]="maximumBirthDate">@if(editForm.controls.birthDate.touched && editForm.controls.birthDate.invalid){<small>Müşteri 18 yaşını doldurmuş olmalıdır.</small>}</label>
+          <label>Cinsiyet<select formControlName="gender"><option>Kadın</option><option>Erkek</option><option>Belirtilmedi</option></select></label>
+          <label>Eğitim Düzeyi<input formControlName="educationLevel"></label><label>Meslek<input formControlName="occupation"></label><label>Çalışma Durumu<input formControlName="employmentStatus"></label>
+          <label>Telefon Ülkesi<select formControlName="phoneCountryCode"><option value="+90">Türkiye (+90)</option><option value="+44">İngiltere (+44)</option><option value="+1">ABD (+1)</option><option value="+49">Almanya (+49)</option></select></label>
+          <label>Telefon<input formControlName="phoneNumber" inputmode="numeric" [placeholder]="phonePlaceholder()" (input)="sanitizePhone($event)"></label><label>E-posta<input formControlName="emailAddress" type="email" (input)="editForm.controls.emailAddress.setValue($any($event.target).value.toLowerCase())"></label>
+          <label>İl<select formControlName="city"><option value="">İl seçiniz</option>@for (province of provinces(); track province.id) { <option [value]="province.name">{{ province.name }}</option> }</select></label>
+          <label>İlçe<select formControlName="district" [disabled]="!editForm.controls.city.value"><option value="">İlçe seçiniz</option>@for (district of districts(); track district.id) { <option [value]="district.name">{{ district.name }}</option> }</select></label>
+          <label>Mahalle<select formControlName="neighborhood" [disabled]="!editForm.controls.district.value"><option value="">Mahalle seçiniz</option>@for (neighborhood of neighborhoods(); track neighborhood.id) { <option [value]="neighborhood.name">{{ neighborhood.name }}</option> }</select></label><label>Açık Adres<textarea rows="3" formControlName="address"></textarea></label>
+          <label>Aylık net gelir<input type="number" formControlName="monthlyNetIncome"></label>
+          <div><b>Diğer banka toplam kart limiti</b><p>{{ formatCurrency(item.otherBankTotalCardLimit) }}</p><small>Yetkili risk kaynağından otomatik alınır; personel tarafından değiştirilemez.</small></div>
+          <div><b>Kredi notu otomatik hesaplanır.</b></div>
+          <div class="edit-actions"><button type="button" class="edit-button" (click)="isEditing.set(false)">Vazgeç</button><button type="submit" class="edit-button primary">Kaydet</button></div>
+        </form>
+      }
+      <section class="detail-section"><h3>Kimlik Bilgileri</h3><p>Kimlik bilgileri salt okunurdur.</p>
+        <div class="detail-grid">
+          <div><label>MÜŞTERİ NO</label><b>{{ item.customerNumber }}</b></div>
+          <div><label>TC KİMLİK NO</label><b>{{ item.nationalIdentityNumber }}</b></div>
+          <div><label>AD SOYAD</label><b>{{ item.firstName }} {{ item.lastName }}</b></div>
+          <div><label>DOĞUM TARİHİ</label><b>{{ item.birthDate || 'Belirtilmedi' }}</b></div>
+          <div><label>CİNSİYET</label><b>{{ item.gender }}</b></div>
+          <div><label>EĞİTİM DÜZEYİ</label><b>{{ item.educationLevel }}</b></div>
+        </div>
+      </section>
+      <section class="detail-section"><div class="section-heading-actions"><div><h3>İletişim ve Adres Bilgileri</h3><p>Varsayılan adres ve doğrulanmış iletişim kanalları</p></div><a [routerLink]="[rolePrefix(), 'customers', item.id, 'addresses']">{{ auth.currentUser()?.role === 'Manager' ? 'Kayıtlı Adresleri Gör' : 'Kayıtlı Adresleri Yönet' }} →</a></div>
+        <div class="detail-grid">
+          <div><label>TELEFON NUMARASI</label><b>{{ item.phoneCountryCode }} {{ item.phoneNumber }} · {{ item.isPhoneVerified ? 'Doğrulandı' : 'Doğrulanmadı' }}</b>@if (!item.isPhoneVerified) { <button type="button" class="edit-button" (click)="startVerification('Phone')">Telefon Kodu Gönder</button> }</div>
+          <div><label>E-POSTA</label><b>{{ item.emailAddress }} · {{ item.isEmailVerified ? 'Doğrulandı' : 'Doğrulanmadı' }}</b>@if (!item.isEmailVerified) { <button type="button" class="edit-button" (click)="startVerification('Email')">E-posta Kodu Gönder</button> }</div>
+          <div><label>İL / İLÇE</label><b>{{ item.city || '—' }} / {{ item.district || '—' }}</b></div>
+          <div><label>MAHALLE</label><b>{{ item.neighborhood || '—' }}</b></div>
+          <div class="wide"><label>AÇIK ADRES</label><b>{{ item.address || 'Adres bilgisi girilmemiş' }}</b></div>
+        </div>
+        @if (verificationChannel()) {
+          <div class="verification-box">
+            <b>{{ verificationDestination() }} için 6 haneli doğrulama kodu</b>
+            <p><b>TEST KODU:</b> <strong>{{ demoCode() }}</strong> · Kalan süre: <strong>{{ verificationTimeText() }}</strong></p>
+            <div><input [formControl]="verificationCode" inputmode="numeric" maxlength="6" placeholder="6 haneli kod" [disabled]="verificationSecondsLeft() === 0"><button type="button" class="edit-button primary" [disabled]="verificationSecondsLeft() === 0" (click)="confirmVerification()">Doğrula</button><button type="button" class="edit-button" (click)="startVerification(verificationChannel()!)">Yeniden Gönder</button></div>
+          </div>
+        }
+      </section>
+      <section class="detail-section"><h3>Mesleki ve Finansal Bilgiler</h3>
+        <div class="detail-grid">
+          <div><label>MESLEK</label><b>{{ item.occupation }}</b></div><div><label>ÇALIŞMA DURUMU</label><b>{{ item.employmentStatus }}</b></div>
+          <div><label>AYLIK NET GELİR</label><b>{{ formatCurrency(item.monthlyNetIncome) }}</b></div>
+          <div><label>DİĞER BANKALARDAKİ KART LİMİTİ</label><b>{{ formatCurrency(item.otherBankTotalCardLimit) }}</b></div>
+          <div><label>BU BANKADAKİ TOPLAM KART LİMİTİ</label><b>{{ formatCurrency(item.ownBankTotalCardLimit) }}</b></div>
+          <div><label>KULLANILABİLİR AZAMİ LİMİT</label><b>{{ formatCurrency(item.availableCardLimit) }}</b></div>
+          <div><label>KREDİ NOTU</label><b>{{ item.creditScore || 'Belirtilmedi' }}</b></div>
+        </div>
+        @if (kkbAnalysis(); as risk) {
+          <div class="error-message" style="border-color:#d8c17b;background:#fff9e9;color:#4b3a0d"><b>KKB / Findeks Risk Analizi</b><p>{{ risk.score }}/1900 · {{ risk.category }} · Risk: {{ risk.riskLevel }}</p><p>{{ risk.explanation }}</p></div>
+        }
+        <div class="table-wrap"><table><thead><tr><th>DİĞER BANKA</th><th>KART</th><th>LİMİT</th></tr></thead><tbody>
+          @for (card of item.otherBankCards; track card.id) { <tr><td>{{ card.bankName }}</td><td>{{ card.maskedCardNumber || 'Beyan edilen toplam' }}</td><td>{{ formatCurrency(card.cardLimit) }}</td></tr> }
+          @empty { <tr><td colspan="3" class="empty-row">Diğer banka kartı beyan edilmemiş.</td></tr> }
+        </tbody></table></div>
+      </section>
+      <section class="detail-section"><h3>KVKK ve Açık Rıza Sürüm Takibi</h3><p>Aydınlatma metni ve iletişim izinleri tarih, kanal ve personel bilgisiyle saklanır.</p>
+        <div class="detail-grid">
+          @for (type of ['KVKK','SMS','EMAIL']; track type) {
+            <div><label>{{ type === 'KVKK' ? 'AYDINLATMA METNİ' : type + ' İLETİŞİM İZNİ' }}</label>
+              @if (latestConsent(type); as consent) { <b>{{ consent.isGranted ? 'Onaylı' : 'Geri Çekildi' }} · {{ consent.textVersion }}</b><small>{{ consent.capturedAtUtc.slice(0,16).replace('T',' ') }} · {{ consent.channel }} · {{ consent.capturedBy }}</small> } @else { <b>Henüz kayıt yok</b> }
+              <div><button type="button" class="edit-button primary" (click)="setConsent(type,true)">Onay Al</button>@if(type !== 'KVKK'){<button type="button" class="edit-button" (click)="setConsent(type,false)">İzni Geri Çek</button>}</div>
+            </div>
+          }
+        </div>
+      </section>
     </article>
 
-    <div class="two-column">
-      <article><div class="card-title"><h3>Başvuru Özeti</h3><span>Bu müşteri için</span></div><div class="empty"><b>Henüz başvuru bulunmuyor</b><p>İlk kredi kartı başvurusunu oluşturarak değerlendirme sürecini başlatabilirsiniz.</p></div></article>
-      <article><div class="card-title"><h3>Kayıt Kontrolü</h3><span>Başvuru öncesi</span></div><ul><li><i>✓</i> Kimlik bilgileri kayıtlı</li><li><i>✓</i> İletişim bilgileri kayıtlı</li><li><i>✓</i> Gelir bilgisi kayıtlı</li></ul></article>
-    </div>
+    <article class="history-card"><div class="card-title"><h3>Müşterinin Kartları</h3><span>{{ cards().length }} kart</span></div>
+      <div class="table-wrap"><table><thead><tr><th>KART NUMARASI</th><th>KART TİPİ</th><th>KART LİMİTİ</th><th>DURUM</th><th></th></tr></thead><tbody>
+        @for (card of cards(); track card.id) { <tr><td>{{ card.maskedCardNumber }}</td><td>{{ card.cardTypeName }}</td><td>{{ formatCurrency(card.cardLimit) }}</td><td><span class="badge">{{ statusLabel(card.status) }}</span></td><td><a [routerLink]="[rolePrefix(), 'cards', card.id]">Kart Detayı →</a></td></tr> }
+        @empty { <tr><td colspan="5" class="empty-row">Müşteriye ait oluşturulmuş kart bulunmuyor.</td></tr> }
+      </tbody></table></div>
+    </article>
+    <article class="history-card"><div class="card-title"><h3>Müşterinin Ek Kartları</h3><span>{{ supplementaryCards().length }} kayıt</span></div>
+      <div class="table-wrap"><table><thead><tr><th>EK KART NUMARASI</th><th>ANA KART SAHİBİ</th><th>YAKINLIK</th><th>PAYLAŞILAN LİMİT</th><th>DURUM</th><th></th></tr></thead><tbody>
+        @for (card of supplementaryCards(); track card.id) { <tr><td>{{ card.maskedCardNumber || 'Henüz üretilmedi' }}</td><td>{{ card.primaryCustomer }}</td><td>{{ card.relationship }}</td><td>{{ formatCurrency(card.requestedLimit) }}</td><td><span class="badge">{{ cardStatusLabel(card.cardStatus, card.status) }}</span></td><td><a [routerLink]="[rolePrefix(), 'supplementary-applications', card.id]">Ek Kart Detayı →</a></td></tr> }
+        @empty { <tr><td colspan="6" class="empty-row">Müşteri adına düzenlenmiş ek kart bulunmuyor.</td></tr> }
+      </tbody></table></div>
+    </article>
+    <article class="history-card"><div class="card-title"><h3>Başvuru Geçmişi</h3><span>{{ applications().length }} başvuru</span></div>
+      <div class="table-wrap"><table><thead><tr><th>BAŞVURU NO</th><th>KART TİPİ</th><th>TALEP EDİLEN LİMİT</th><th>BAŞVURU TARİHİ</th><th>DURUM</th><th></th></tr></thead><tbody>
+        @for (application of applications(); track application.id) { <tr><td><b>{{ application.applicationNumber }}</b></td><td>{{ application.cardTypeName }}</td><td>{{ formatCurrency(application.requestedLimit) }}</td><td>{{ application.createdAtUtc.slice(0,10) }}</td><td><span class="badge">{{ statusLabel(application.status) }}</span></td><td><a [routerLink]="[rolePrefix(), 'applications', application.id]">İncele →</a></td></tr> }
+        @empty { <tr><td colspan="6" class="empty-row">Henüz kart başvurusu bulunmuyor.</td></tr> }
+      </tbody></table></div>
+    </article>
   }
+  @if (showStatusConfirmation()) { <div class="modal-overlay" (click)="showStatusConfirmation.set(false)"><section class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="statusTitle" (click)="$event.stopPropagation()"><h2 id="statusTitle">Müşteriyi pasife al</h2><p>Müşteri pasife alındığında yeni kart ve limit başvurusu oluşturamaz. Açık bir başvurusu varsa işlem sunucu tarafından engellenecektir.</p><div><button type="button" class="secondary" (click)="showStatusConfirmation.set(false)">Vazgeç</button><button type="button" class="danger" (click)="confirmStatusChange()">Pasife Al</button></div></section></div> }
 </section>

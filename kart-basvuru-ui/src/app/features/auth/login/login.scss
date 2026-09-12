@@ -3,6 +3,10 @@
   min-height: 100vh;
   color: #0c1c33;
 }
+.autofill-trap { position: fixed; left: -10000px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.support-button { width: 100%; margin: -4px 0 14px; border: 0; color: #8c2f2f; background: transparent; font-weight: 800; cursor: pointer; text-decoration: underline; }
+.support-button:disabled { opacity: .55; cursor: wait; }
+.support-notice { margin: 0 0 12px; padding: 10px 12px; border-radius: 7px; color: #154b37; background: #eaf7f0; font-size: 12px; }
 
 .login-page {
   min-height: 100vh;
@@ -127,21 +131,7 @@ input.invalid {
 }
 
 .password-field input {
-  padding-right: 75px;
-}
-
-.show-password {
-  position: absolute;
-  top: 0;
-  right: 8px;
-  height: 54px;
-  padding: 0 10px;
-  border: 0;
-  background: transparent;
-  color: #12375f;
-  font-size: 11px;
-  font-weight: 800;
-  cursor: pointer;
+  padding-right: 14px;
 }
 
 small {

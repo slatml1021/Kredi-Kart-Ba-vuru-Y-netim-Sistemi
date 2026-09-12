@@ -1,6 +1,15 @@
 <section class="application-page">
   <div class="page-title"><div><p>MEMUR PANELİ / KART BAŞVURUSU</p><h1>Yeni Kart Başvurusu</h1><span>Müşteriyi seçin, kart ve limit tercihlerini belirleyerek başvuruyu tamamlayın.</span></div></div>
 
+  <div class="application-kind" role="group" aria-label="Başvuru türü">
+    <button type="button" [class.active]="applicationKind()==='Primary'" (click)="selectApplicationKind('Primary')"><b>Asıl Kart Başvurusu</b><span>Müşteri adına yeni bir kredi kartı ürünü oluşturur.</span></button>
+    <button type="button" [class.active]="applicationKind()==='Supplementary'" (click)="selectApplicationKind('Supplementary')"><b>Ek Kart Başvurusu</b><span>Mevcut ana kartın limitini paylaşan ek kart oluşturur.</span></button>
+  </div>
+
+  @if(applicationKind()==='Supplementary') {
+    <app-supplementary-applications [embedded]="true" />
+  } @else {
+
   @if (step() < 4) {
     <ol class="stepper">
       <li [class.active]="step() >= 1"><i>1</i><div><b>Müşteri Seçimi</b><span>Kimlik ve finansal bilgiler</span></div></li>
@@ -9,29 +18,107 @@
     </ol>
   }
 
-  @if (errorMessage()) { <div class="error-message" role="alert">{{ errorMessage() }}</div> }
+  @if (errorMessage()) { <div class="error-message dismissible" role="alert" tabindex="-1"><span>{{ errorMessage() }}</span><button type="button" aria-label="Uyarıyı kapat" (click)="errorMessage.set('')">×</button></div> }
+  @if (notice()) { <div class="notice-message" role="status">{{ notice() }}<button type="button" (click)="notice.set('')">×</button></div> }
+  @if (draftInfo() && step() === 1) { <div class="notice-message"><span><b>Kaydedilmiş başvuru taslağı bulundu</b> · {{ draftTime() }}</span><span class="notice-actions"><button type="button" class="limit-action" (click)="restoreDraft()">Taslağa Devam Et</button><button type="button" (click)="discardDraft()">Taslağı Sil</button></span></div> }
 
   @if (step() === 1) {
     <article class="panel">
       <div class="panel-title"><span>01</span><div><h2>Başvuru Yapılacak Müşteri</h2><p>TC Kimlik No, müşteri numarası, telefon veya ad soyad ile sorgulayın.</p></div></div>
-      <form class="search-form" (ngSubmit)="searchCustomer()"><input [formControl]="query" placeholder="Müşteri arama kriteri" /><button [disabled]="isLoading()">{{ isLoading() ? 'Sorgulanıyor...' : 'Müşteri Sorgula' }}</button></form>
+      <form class="search-form" (submit)="$event.preventDefault(); searchCustomer()"><input [formControl]="query" placeholder="Müşteri arama kriteri" /><button [disabled]="isLoading()">{{ isLoading() ? 'Sorgulanıyor...' : 'Müşteri Sorgula' }}</button></form>
       @if (query.touched && query.invalid) { <small>Bir arama kriteri giriniz.</small> }
       @if (searchResults().length > 0) {
-        <div class="results">@for (customer of searchResults(); track customer.id) { <button type="button" (click)="chooseCustomer(customer)"><span class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</span><span><b>{{ customer.firstName }} {{ customer.lastName }}</b><small>{{ customer.customerNumber }} · {{ customer.nationalIdentityNumber }}</small></span><i>Seç →</i></button> }</div>
+        <div class="results">@for (customer of searchResults(); track customer.id) { <button type="button" (click)="chooseCustomer(customer)"><span class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</span><span><b>{{ customer.firstName }} {{ customer.lastName }}</b><small>{{ customer.customerNumber }} · {{ customer.nationalIdentityNumber }} · {{ customer.isProfileComplete ? 'Bilgiler tamam' : 'Bilgiler eksik' }}</small></span><i>{{ customer.isProfileComplete && customer.isActive ? 'Seç →' : 'Güncelle' }}</i></button> }</div>
       }
-      <div class="new-customer">Müşteri sistemde kayıtlı değil mi? <a routerLink="/officer/customers/new">Yeni müşteri oluşturun →</a></div>
+      @if (hasSearched() && searchResults().length === 0 && !errorMessage()) {
+        <div class="new-customer">Sorgulanan kişi sistemde kayıtlı değil. <a routerLink="/officer/customers/new" [queryParams]="{ nationalIdentityNumber: query.value }">Yeni müşteri oluşturun →</a></div>
+      }
     </article>
   }
 
   @if (step() === 2 && selectedCustomer(); as customer) {
-    <div class="selected-customer"><div class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</div><div><b>{{ customer.firstName }} {{ customer.lastName }}</b><span>{{ customer.customerNumber }} · {{ customer.nationalIdentityNumber }}</span></div><button type="button" (click)="goBack()">Müşteriyi Değiştir</button></div>
+    <div class="selected-customer"><div class="customer-avatar">{{ customer.firstName.charAt(0) }}{{ customer.lastName.charAt(0) }}</div><div><a [routerLink]="['/officer/customers', customer.id]">{{ customer.firstName }} {{ customer.lastName }} ↗</a><span>{{ customer.customerNumber }} · {{ customer.nationalIdentityNumber }}</span></div><button type="button" (click)="goBack()">Müşteriyi Değiştir</button></div>
     <article class="panel">
-      <div class="panel-title"><span>02</span><div><h2>Kart Tipi ve Talep Edilen Limit</h2><p>Müşteriye uygun kart ürününü seçin ve başvuru limitini belirleyin.</p></div></div>
-      <div class="limit-summary"><div><span>AYLIK NET GELİR</span><b>{{ formatCurrency(customer.monthlyNetIncome) }}</b></div><div><span>DİĞER BANKA KART LİMİTİ</span><b>{{ formatCurrency(customer.otherBankTotalCardLimit) }}</b></div><div class="available"><span>KULLANILABİLİR LİMİT</span><b>{{ formatCurrency(availableLimit()) }}</b></div></div>
-      <div class="card-types">@for (cardType of cardTypes(); track cardType.id) { <button type="button" [class.selected]="applicationForm.controls.cardTypeId.value === cardType.id" (click)="chooseCardType(cardType)"><i></i><b>{{ cardType.name }}</b><span>{{ formatCurrency(cardType.minimumLimit ?? 0) }} – {{ formatCurrency(cardType.maximumLimit ?? availableLimit()) }}</span><em>{{ applicationForm.controls.cardTypeId.value === cardType.id ? '✓ Seçildi' : 'Kartı Seç' }}</em></button> }</div>
-      <form [formGroup]="applicationForm"><label>Talep Edilen Kart Limiti (₺)<input formControlName="requestedLimit" type="number" min="1" step="500" /><span>En fazla {{ formatCurrency(availableLimit()) }} talep edilebilir.</span></label></form>
+      <div class="panel-title"><span>02</span><div><h2>Kart, Limit ve Teslimat Bilgileri</h2><p>Kart ürününü, başvuru limitini, teslimat adresini ve ekstre tercihini belirleyin.</p></div></div>
+      <div class="limit-summary"><div><span>AYLIK NET GELİR</span><b>{{ formatCurrency(customer.monthlyNetIncome) }}</b></div><div><span>DİĞER BANKA AKTİF LİMİTİ</span><b>{{ formatCurrency(customer.otherBankTotalCardLimit) }}</b></div><div><span>BU BANKADAKİ AKTİF LİMİT</span><b>{{ formatCurrency(customer.ownBankTotalCardLimit) }}</b></div><div><span>TOPLAM TAHSİS EDİLMİŞ LİMİT</span><b>{{ formatCurrency(customer.otherBankTotalCardLimit + customer.ownBankTotalCardLimit) }}</b></div><div><span>KREDİ NOTU</span><b>{{ customer.creditScore || '—' }} / 1900</b><small>Prototip puanı; gelir, yaş ve mevcut limitlerden hesaplanır. Gerçek KKB/Findeks sorgusu değildir.</small></div><div class="available"><span>KULLANILABİLİR / HESAPLANAN AZAMİ LİMİT</span><b>{{ formatCurrency(availableLimit()) }}</b></div></div>
+      <h3 class="choice-heading">Kart Ürünü</h3>
+      <div class="card-types">@for (cardType of productOptions(); track cardType.productName) { <button type="button" [class.selected]="selectedProductName() === cardType.productName" (click)="chooseProduct(cardType.productName)"><i></i><b>{{ cardType.productName }}</b><span>{{ cardType.productDescription }}</span><ul>@for(benefit of cardType.benefits;track benefit){<li>{{ benefit }}</li>}</ul><small>{{ cardType.annualFee }}</small><small>Ürün limiti: {{ formatCurrency(cardType.minimumLimit || 0) }} – {{ formatCurrency(cardType.maximumLimit || availableLimit()) }}</small><em>{{ selectedProductName() === cardType.productName ? '✓ Seçildi' : 'Ürünü Seç' }}</em></button> }</div>
+      <h3 class="choice-heading">Kart Ağı</h3>
+      <div class="network-options">@for(network of networkOptions;track network.value){<button type="button" [class.selected]="selectedNetworkName()===network.value" (click)="chooseNetwork(network.value)"><img [src]="network.logo" [alt]="network.label + ' logosu'"><span>{{ network.label }}</span></button>}</div>
+      @if (duplicateWarning(); as duplicate) {
+        @if (!duplicateWarningDismissed()) { <div class="error-message dismissible"><span><b>Yeni başvuru oluşturulamaz</b><p>{{ duplicate.message }} Durum: {{ duplicate.status }}. Açık/onaylı kayıt sonuçlanmadan aynı karta yeniden başvurulamaz.</p></span><button type="button" aria-label="Uyarıyı kapat" (click)="duplicateWarningDismissed.set(true)">×</button></div> }
+      }
+      <form class="application-fields" [formGroup]="applicationForm">
+        <label>Talep Edilen Kart Limiti (₺)<input formControlName="requestedLimit" type="number" [min]="selectedCardType()?.minimumLimit || 1" step="500" /><span>Bu tutar müşterinin talebidir. Hesaplanan azami limit {{ formatCurrency(availableLimit()) }} olup nihai limit müdür tarafından belirlenir.</span>@if(requestedLimitBelowProductMinimum()){<small>Seçilen {{ selectedCardType()?.name }} kartın ürün minimumu {{ formatCurrency(selectedCardType()?.minimumLimit || 0) }}. Bu tutarın altında başvuru oluşturulamaz.</small>}</label>
+        @if(requestedLimitAboveCalculatedMaximum() && !limitNoticeDismissed()){<div class="notice-message"><span>Talep, hesaplanan azami limiti aşıyor. Başvuru kaydedilebilir ancak müdür karar ekranında yüksek risk uyarısı gösterilecek.</span><span class="notice-actions"><button type="button" class="limit-action" (click)="applicationForm.controls.requestedLimit.setValue(availableLimit()); limitNoticeDismissed.set(false)">Azami limite indir</button><button type="button" aria-label="Bilgilendirmeyi kapat" (click)="limitNoticeDismissed.set(true)">×</button></span></div>}
+        <fieldset class="delivery-options"><legend>Kart Teslimat Tercihi</legend>
+          <label [class.selected]="applicationForm.controls.deliveryMethod.value === 'RegisteredAddress'"><input type="radio" formControlName="deliveryMethod" value="RegisteredAddress"><b>Kayıtlı Adrese Teslim</b><span>Müşterinin sistemde kayıtlı adresi kullanılır.</span></label>
+          <label [class.selected]="applicationForm.controls.deliveryMethod.value === 'DifferentAddress'"><input type="radio" formControlName="deliveryMethod" value="DifferentAddress"><b>Farklı Adrese Teslim</b><span>Müşteri için farklı bir teslimat adresi girilir.</span></label>
+          <label [class.selected]="applicationForm.controls.deliveryMethod.value === 'Branch'"><input type="radio" formControlName="deliveryMethod" value="Branch"><b>Şubeden Teslim</b><span>Kart seçilen banka şubesinden teslim alınır.</span></label>
+        </fieldset>
+        @if (applicationForm.controls.deliveryMethod.value === 'RegisteredAddress') {
+          <div class="registered-address"><span>Kayıtlı Teslimat Adresi</span>
+            @if(savedAddresses().length){<label>Adres Seç<select formControlName="selectedSavedAddressId" (change)="selectSavedAddress(+$any($event.target).value)">@for(address of savedAddresses();track address.id){<option [value]="address.id">{{ address.name }}{{ address.isDefault ? ' · Varsayılan' : '' }}</option>}</select></label>}
+            <b>{{ applicationForm.controls.deliveryAddress.value || customer.address }}</b><p>{{ applicationForm.controls.deliveryDistrict.value || customer.district }} / {{ applicationForm.controls.deliveryCity.value || customer.city }}</p>
+            <a [routerLink]="['/officer/customers', customer.id, 'addresses']">Kayıtlı adresleri yönet →</a>
+          </div>
+        }
+        @if (applicationForm.controls.deliveryMethod.value === 'DifferentAddress') {
+          <div class="address-grid">
+            <label>İl *<select formControlName="deliveryCity"><option value="">İl seçiniz</option>@for (province of provinces(); track province.id) { <option [value]="province.name">{{ province.name }}</option> }</select></label>
+            <label>İlçe *<select formControlName="deliveryDistrict" [disabled]="!applicationForm.controls.deliveryCity.value"><option value="">İlçe seçiniz</option>@for (district of districts(); track district.id) { <option [value]="district.name">{{ district.name }}</option> }</select></label>
+            <label>Mahalle *<select formControlName="deliveryNeighborhood" [disabled]="!applicationForm.controls.deliveryDistrict.value"><option value="">Mahalle seçiniz</option>@for (neighborhood of neighborhoods(); track neighborhood.id) { <option [value]="neighborhood.name">{{ neighborhood.name }}</option> }</select></label>
+            <label>Cadde / Sokak / Bulvar *<select formControlName="deliveryStreet" [disabled]="!applicationForm.controls.deliveryNeighborhood.value || addressLoading()"><option value="">{{ addressLoading() ? 'Ulusal katalog yükleniyor...' : 'Adres bileşeni seçiniz' }}</option>@for (street of streetOptions(); track street) { <option [value]="street">{{ street }}</option> }</select></label>
+            <label>Site / Mevki<input formControlName="deliveryAvenue" placeholder="İsteğe bağlı site veya mevki adı"></label>
+            <label>Bina No *<input formControlName="deliveryBuildingNo" placeholder="12/A">@if(applicationForm.controls.deliveryBuildingNo.touched && applicationForm.controls.deliveryBuildingNo.invalid){<small>Harf, rakam, “-” ve “/” kullanılabilir.</small>}</label>
+            <label>Daire No<input formControlName="deliveryApartmentNo" placeholder="5-B">@if(applicationForm.controls.deliveryApartmentNo.touched && applicationForm.controls.deliveryApartmentNo.invalid){<small>Harf, rakam, “-” ve “/” kullanılabilir.</small>}</label>
+            <label>Kat<input formControlName="deliveryFloor" inputmode="numeric" placeholder="-1">@if(applicationForm.controls.deliveryFloor.touched && applicationForm.controls.deliveryFloor.invalid){<small>Kat yalnızca pozitif veya negatif sayı olabilir.</small>}</label>
+            <label>Posta Kodu *<input formControlName="deliveryPostalCode" maxlength="5" inputmode="numeric" readonly><span>{{ postalCodeStatus() === 'official' ? 'Resmî mahalle posta kodu.' : postalCodeStatus() === 'derived' ? 'Resmî yerleşim kaydından türetilen posta kodu.' : postalCodeStatus() ? 'Tahmini katalog değeri; kayıt öncesi kontrol edin.' : 'Mahalle seçildiğinde otomatik gelir.' }}</span></label>
+            <label>Teslim Alacak Kişi *<input formControlName="deliveryRecipientName"></label>
+            <label>Telefon Ülkesi *<select formControlName="deliveryPhoneCountryCode">@for (country of phoneCountries; track country.code) { <option [value]="country.code">{{ country.label }}</option> }</select></label>
+            <label>Teslimat Telefonu *<input formControlName="deliveryPhone" maxlength="11" placeholder="Ülke kodundan sonraki numara"></label>
+            <div class="address-field composed-address"><span>OLUŞTURULAN AÇIK ADRES</span><b>{{ applicationForm.controls.deliveryNeighborhood.value }} {{ applicationForm.controls.deliveryStreet.value }} {{ applicationForm.controls.deliveryAvenue.value }} Bina No: {{ applicationForm.controls.deliveryBuildingNo.value }} Daire: {{ applicationForm.controls.deliveryApartmentNo.value }} {{ applicationForm.controls.deliveryDistrict.value }} / {{ applicationForm.controls.deliveryCity.value }}</b></div>
+            <div class="save-address wide"><label><input type="checkbox" formControlName="saveDeliveryAddress"><span><b>Bu adresi müşterinin adres defterine kaydet</b><small>Sonraki kart ve ek kart başvurularında tekrar seçilebilir.</small></span></label>@if(applicationForm.controls.saveDeliveryAddress.value){<label>Adres Adı *<input formControlName="addressName" placeholder="Örn. İş Adresi" maxlength="40">@if(applicationForm.controls.addressName.touched && applicationForm.controls.addressName.value.trim().length < 2){<small>Adres adı en az 2 karakter olmalıdır.</small>}</label>}</div>
+          </div>
+        }
+        @if (applicationForm.controls.deliveryMethod.value === 'Branch') {
+          <div class="address-grid branch-grid">
+            <label>Şube İli *<select formControlName="deliveryCity"><option value="">İl seçiniz</option>@for (province of provinces(); track province.id) { <option [value]="province.name">{{ province.name }}</option> }</select></label>
+            <label>Şube İlçesi *<select formControlName="deliveryDistrict" [disabled]="!applicationForm.controls.deliveryCity.value"><option value="">İlçe seçiniz</option>@for (district of districts(); track district.id) { <option [value]="district.name">{{ district.name }}</option> }</select></label>
+            <label class="address-field">Teslimat Şubesi *<select formControlName="deliveryBranch" [disabled]="!applicationForm.controls.deliveryDistrict.value"><option value="">Şube seçiniz</option>@for (branch of availableBranches(); track branch) { <option [value]="branch">{{ branch }}</option> }</select><span>Yalnızca seçilen il ve ilçede hizmet veren şubeler listelenir.</span></label>
+          </div>
+        }
+        <section class="preference-section"><h3>Kart Kullanım Tercihleri</h3>
+          <label>Ekstre Gönderim Tercihi<select formControlName="statementPreference"><option value="Email">E-posta</option><option value="Paper">Basılı Ekstre</option><option value="Mobile">Mobil Bildirim</option></select></label>
+          <div class="statement-grid">
+            <label>Hesap / Ekstre Kesim Günü<select formControlName="statementDay"><option [ngValue]="7">Ayın 7. günü</option><option [ngValue]="14">Ayın 14. günü</option><option [ngValue]="21">Ayın 21. günü</option><option [ngValue]="28">Ayın 28. günü</option></select><span>Bankanın tanımlı hesap kesim günlerinden biri seçilir.</span></label>
+            <div class="due-date"><span>SON ÖDEME TARİHİ</span><b>{{ paymentDueLabel(applicationForm.controls.statementDay.value) }}</b><small>Hesap kesim tarihinden 10 gün sonra otomatik belirlenir.</small></div>
+          </div>
+          <label class="switch-row"><span><b>Düzenli Limit Artışı Tercihi</b><small>Otomatik artırmaz; uygun dönemlerde müşteriye limit teklifi oluşturulmasına izin verir.</small></span><input type="checkbox" formControlName="automaticLimitIncreaseEnabled"></label>
+          <label class="switch-row"><span><b>Temassız Kullanım</b><small>Kartın temassız işlemlerde kullanılmasına izin verir.</small></span><input type="checkbox" formControlName="contactlessEnabled"></label>
+          <label class="switch-row"><span><b>İnternet Alışverişi</b><small>Kartın e-ticaret işlemlerine açık olmasını sağlar.</small></span><input type="checkbox" formControlName="internetShoppingEnabled"></label>
+        </section>
+        <section class="preference-section"><h3>Başvuru Notu ve Onay</h3>
+          <label>Başvuru Notu<textarea formControlName="applicationNote" rows="3" placeholder="Başvuruya ilişkin açıklama (isteğe bağlı)"></textarea></label>
+          <div class="document-check">
+            <div><b>Belge Yükleme ve Kontrol</b><span>PDF, JPG veya PNG · en fazla 5 MB. Dosya adı seçimden sonra gösterilir.</span></div>
+            <label class="document-upload">Kimlik Belgesi<input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="selectDocument('Identity', $event)"><span>{{ documentName('Identity') }}</span></label>
+            <label><input type="checkbox" formControlName="identityDocumentConfirmed"> Kimlik belgesi kontrol edildi.</label>
+            <label class="document-upload">Gelir Belgesi<input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="selectDocument('Income', $event)"><span>{{ documentName('Income') }}</span></label>
+            <label><input type="checkbox" formControlName="incomeDocumentConfirmed"> Gelir belgesi kontrol edildi.</label>
+            <label class="document-upload">İkametgah Belgesi<input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="selectDocument('Residence', $event)"><span>{{ documentName('Residence') }}</span></label>
+            <label><input type="checkbox" formControlName="residenceDocumentConfirmed"> İkametgah belgesi kontrol edildi.</label>
+            @if (
+              (applicationForm.controls.identityDocumentConfirmed.touched && applicationForm.controls.identityDocumentConfirmed.invalid) ||
+              (applicationForm.controls.incomeDocumentConfirmed.touched && applicationForm.controls.incomeDocumentConfirmed.invalid) ||
+              (applicationForm.controls.residenceDocumentConfirmed.touched && applicationForm.controls.residenceDocumentConfirmed.invalid)
+            ) { <small>Kimlik, gelir belgesi ve ikametgah kontrol edilmeden başvuru oluşturulamaz.</small> }
+          </div>
+          <label class="confirmation"><input type="checkbox" formControlName="confirmed"> Müşteri ve başvuru bilgilerinin doğruluğunu kontrol ettim.</label>
+        </section>
+      </form>
     </article>
-    <div class="actions"><button class="secondary" type="button" (click)="goBack()">Geri</button><button type="button" (click)="goToSummary()">Başvuru Özetine Geç →</button></div>
+    <div class="actions"><button class="secondary" type="button" (click)="goBack()">Önceki Adım</button><button class="secondary" type="button" (click)="saveDraft()">Taslak Kaydet</button><button type="button" (click)="goToSummary()">Başvuru Özetine Geç →</button></div>
   }
 
   @if (step() === 3 && selectedCustomer(); as customer) {
@@ -39,12 +126,15 @@
       <div class="panel-title"><span>03</span><div><h2>Başvuru Özeti ve Onay</h2><p>Göndermeden önce tüm bilgileri kontrol edin.</p></div></div>
       <div class="summary-section"><h3>Müşteri Bilgileri</h3><dl><div><dt>Müşteri</dt><dd>{{ customer.firstName }} {{ customer.lastName }}</dd></div><div><dt>Müşteri No</dt><dd>{{ customer.customerNumber }}</dd></div><div><dt>TC Kimlik No</dt><dd>{{ customer.nationalIdentityNumber }}</dd></div></dl></div>
       <div class="summary-section"><h3>Kart ve Limit Bilgileri</h3><dl><div><dt>Kart Tipi</dt><dd>{{ selectedCardType()?.name }}</dd></div><div><dt>Talep Edilen Limit</dt><dd class="gold">{{ formatCurrency(applicationForm.controls.requestedLimit.value) }}</dd></div><div><dt>Kullanılabilir Limit</dt><dd>{{ formatCurrency(availableLimit()) }}</dd></div></dl></div>
+      <div class="summary-section"><h3>Teslimat ve Kart Tercihleri</h3><dl><div><dt>Teslimat Yöntemi</dt><dd>{{ applicationForm.controls.deliveryMethod.value === 'Branch' ? 'Şubeden Teslim' : applicationForm.controls.deliveryMethod.value === 'DifferentAddress' ? 'Farklı Adrese Teslim' : 'Kayıtlı Adrese Teslim' }}</dd></div><div><dt>Teslimat Adresi / Şube</dt><dd>{{ applicationForm.controls.deliveryMethod.value === 'Branch' ? applicationForm.controls.deliveryBranch.value : applicationForm.controls.deliveryAddress.value }}</dd></div><div><dt>Ekstre Tercihi</dt><dd>{{ applicationForm.controls.statementPreference.value === 'Email' ? 'E-posta' : applicationForm.controls.statementPreference.value === 'Paper' ? 'Basılı Ekstre' : 'Mobil Bildirim' }}</dd></div><div><dt>Hesap Kesim / Son Ödeme</dt><dd>Ayın {{ applicationForm.controls.statementDay.value }}. günü / {{ paymentDueLabel(applicationForm.controls.statementDay.value) }}</dd></div><div><dt>Temassız / İnternet</dt><dd>{{ applicationForm.controls.contactlessEnabled.value ? 'Açık' : 'Kapalı' }} / {{ applicationForm.controls.internetShoppingEnabled.value ? 'Açık' : 'Kapalı' }}</dd></div></dl></div>
+      <div class="summary-section"><h3>Belge Kontrolü</h3><dl><div><dt>Kimlik</dt><dd>✓ Kontrol edildi</dd></div><div><dt>Gelir Belgesi</dt><dd>✓ Kontrol edildi</dd></div><div><dt>İkametgah</dt><dd>✓ Kontrol edildi</dd></div></dl></div>
       <div class="notice"><b>Değerlendirme Süreci</b><span>Başvuru gönderildiğinde “Beklemede” durumuyla müdür değerlendirme kuyruğuna aktarılacaktır.</span></div>
     </article>
-    <div class="actions"><button class="secondary" type="button" (click)="goBack()">Bilgileri Düzenle</button><button type="button" (click)="submit()" [disabled]="isLoading()">{{ isLoading() ? 'Gönderiliyor...' : 'Başvuruyu Gönder' }}</button></div>
+    <div class="actions"><button class="secondary" type="button" (click)="goBack()">Bilgileri Düzenle</button><button class="secondary" type="button" (click)="saveDraft()">Taslak Kaydet</button><button type="button" (click)="submit()" [disabled]="isLoading()" [attr.aria-busy]="isLoading()">{{ isLoading() ? 'Başvuru tamamlanıyor...' : 'Başvuruyu Tamamla' }}</button></div>
   }
 
   @if (step() === 4 && createdApplication(); as application) {
-    <article class="success-panel"><div class="success-icon">✓</div><p>BAŞVURU BAŞARIYLA OLUŞTURULDU</p><h2>Kart başvurusu değerlendirmeye gönderildi</h2><span>Başvuru numarasını kullanarak süreci takip edebilirsiniz.</span><div class="application-number"><small>BAŞVURU NUMARASI</small><b>{{ application.applicationNumber }}</b></div><dl><div><dt>Müşteri</dt><dd>{{ application.customerFullName }}</dd></div><div><dt>Kart Tipi</dt><dd>{{ application.cardTypeName }}</dd></div><div><dt>Talep Edilen Limit</dt><dd>{{ formatCurrency(application.requestedLimit) }}</dd></div><div><dt>Durum</dt><dd class="pending">● Beklemede</dd></div></dl><div class="success-actions"><a [routerLink]="['/officer/applications', application.id]">Başvuru Detayını Gör</a><a class="primary" routerLink="/officer/customers">Yeni İşlem</a></div></article>
+    <article class="success-panel"><div class="success-icon">✓</div><p>BAŞVURU BAŞARIYLA OLUŞTURULDU</p><h2>Başvuru başarıyla oluşturuldu</h2><span>Başvuru müdür değerlendirmesine gönderildi.</span><div class="application-number"><small>BAŞVURU NUMARASI</small><b>{{ application.applicationNumber }}</b></div><dl><div><dt>Müşteri</dt><dd>{{ application.customerFullName }}</dd></div><div><dt>Kart Tipi</dt><dd>{{ application.cardTypeName }}</dd></div><div><dt>Talep Edilen Limit</dt><dd>{{ formatCurrency(application.requestedLimit) }}</dd></div><div><dt>Başvuru Durumu</dt><dd class="pending">● Beklemede</dd></div><div><dt>Kart Durumu</dt><dd>Henüz oluşturulmadı</dd></div></dl><div class="success-actions"><button type="button" (click)="startNewApplication()">Yeni Başvuru Oluştur</button><button type="button" (click)="downloadCreatedPdf()">PDF İndir</button><button type="button" (click)="printApplication()">Yazdır</button><a [routerLink]="['/officer/applications', application.id]">Başvuru Detayı</a><a class="primary" routerLink="/officer/applications">Başvurulara Git</a></div></article>
+  }
   }
 </section>

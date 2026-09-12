@@ -1,0 +1,223 @@
+{
+  "info": {
+    "_postman_id": "b86558b6-dc37-49f5-aa77-38b18c8e7f15",
+    "name": "KKBYS Son Revizyon Kontrolleri",
+    "description": "Ulusal adres kataloğu, ürün-kart ağı ayrımı, temiz demo verisi, KYC, iş dağılımı, simülasyon, ek kart ana kart seçimi ve iletişim kurallarını gerçek yerel API üzerinde doğrular.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Memur Girişi",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"registrationNumber\": \"{{officerRegistrationNumber}}\",\n  \"password\": \"{{officerPassword}}\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Memur girişi başarılı', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.expect(body.user.roles).to.include('Officer');",
+        "pm.environment.set('officerToken', body.accessToken);"
+      ] } }]
+    },
+    {
+      "name": "02 - Kart Ürün ve Ağ Kataloğu",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/card-applications/card-types", "host": ["{{baseUrl}}"], "path": ["api", "card-applications", "card-types"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Kart kataloğu 200', () => pm.response.to.have.status(200));",
+        "const rows = pm.response.json();",
+        "pm.test('En az 12 ürün/ağ kombinasyonu var', () => pm.expect(rows.length).to.be.at.least(12));",
+        "pm.test('Visa, Mastercard ve TROY seçenekleri var', () => { const networks = [...new Set(rows.map(x => x.network))]; pm.expect(networks).to.include.members(['Visa','Mastercard','TROY']); });",
+        "pm.test('BIN/IIN değerleri 6 veya 8 haneli', () => rows.forEach(x => pm.expect(String(x.bin)).to.match(/^(\\d{6}|\\d{8})$/)));"
+      ] } }]
+    },
+    {
+      "name": "03 - Ulusal Sokak Kataloğu",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/address-catalog/streets?neighborhoodId=176167&limit=20", "host": ["{{baseUrl}}"], "path": ["api", "address-catalog", "streets"], "query": [{ "key": "neighborhoodId", "value": "176167" }, { "key": "limit", "value": "20" }] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Sokak kataloğu 200', () => pm.response.to.have.status(200));",
+        "const rows = pm.response.json();",
+        "pm.test('Katalog gerçek id ve ad döndürüyor', () => { pm.expect(rows).to.be.an('array').and.not.empty; pm.expect(rows[0].id).to.be.a('number'); pm.expect(rows[0].name).to.be.a('string').and.not.empty; });"
+      ] } }]
+    },
+    {
+      "name": "04 - Ece Aydın Müşteri Arama",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/customers?query=Ece%20Aydın", "host": ["{{baseUrl}}"], "path": ["api", "customers"], "query": [{ "key": "query", "value": "Ece Aydın" }] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Müşteri arama 200', () => pm.response.to.have.status(200));",
+        "const ece = pm.response.json().find(x => x.firstName === 'Ece' && x.lastName === 'Aydın');",
+        "pm.test('Ece Aydın bulundu', () => pm.expect(ece).to.exist);",
+        "pm.environment.set('eceCustomerId', ece.id);"
+      ] } }]
+    },
+    {
+      "name": "05 - Ece Aydın Detayı ve Kartı",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/customers/{{eceCustomerId}}/detail", "host": ["{{baseUrl}}"], "path": ["api", "customers", "{{eceCustomerId}}", "detail"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Ece detayı 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.expect(body.customer.firstName).to.eql('Ece');",
+        "const card = body.cards.find(x => x.status === 'Active' || x.status === '2');",
+        "pm.test('Aktif kart kaydı var', () => pm.expect(card).to.exist);",
+        "pm.environment.set('eceCardId', card.id);"
+      ] } }]
+    },
+    {
+      "name": "06 - Ece Aydın Kart Detayı",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/cards/{{eceCardId}}", "host": ["{{baseUrl}}"], "path": ["api", "cards", "{{eceCardId}}"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Kart detayı 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.expect(body.customerFullName).to.eql('Ece Aydın');",
+        "pm.expect(body.status).to.eql('Active');",
+        "pm.expect(body.cardTypeName).to.match(/Visa|Mastercard|TROY/);"
+      ] } }]
+    },
+    {
+      "name": "07 - Müdür Girişi",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"registrationNumber\": \"{{managerRegistrationNumber}}\",\n  \"password\": \"{{managerPassword}}\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Müdür girişi başarılı', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.expect(body.user.roles).to.include('Manager');",
+        "pm.environment.set('managerToken', body.accessToken);"
+      ] } }]
+    },
+    {
+      "name": "08 - KYC ve Belge Uygunluğu",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/application-operations/{{applicationId}}/kyc", "host": ["{{baseUrl}}"], "path": ["api", "application-operations", "{{applicationId}}", "kyc"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('KYC kontrolü 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.test('Demo başvuru işleme uygun', () => pm.expect(body.overallStatus).to.eql('Eligible'));",
+        "pm.test('Belgeler müdür doğrulaması beklemeden geçerli', () => body.checks.filter(x => x.key.startsWith('document-')).forEach(x => pm.expect(x.status).to.eql('Passed')));"
+      ] } }]
+    },
+    {
+      "name": "09 - Başvuru Simülasyonu Ürün Uyumu",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"customerId\": {{customerId}},\n  \"cardTypeId\": 1,\n  \"requestedLimit\": 15000,\n  \"deliveryMethod\": \"RegisteredAddress\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/platform/simulation", "host": ["{{baseUrl}}"], "path": ["api", "platform", "simulation"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Simülasyon 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.test('Her sonuç sabit Gold World değil', () => { pm.expect(body.recommendedCard).to.include('Visa'); pm.expect(body.recommendedCard).not.to.eql('Gold World'); });",
+        "pm.expect(body.preAssessment.score).to.be.within(0, 100);"
+      ] } }]
+    },
+    {
+      "name": "10 - Müdür İş Dağılımı Yenileme",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/application-workflow/overview", "host": ["{{baseUrl}}"], "path": ["api", "application-workflow", "overview"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('İş dağılımı yenileme 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.expect(body.officers).to.be.an('array').and.not.empty;",
+        "pm.expect(body.applications).to.be.an('array').and.not.empty;"
+      ] } }]
+    },
+    {
+      "name": "11 - Ek Kart Ana Kart Bağlamı",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/supplementary-card-applications/card-context/{{eceCardId}}", "host": ["{{baseUrl}}"], "path": ["api", "supplementary-card-applications", "card-context", "{{eceCardId}}"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Ana kart bağlamı 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.expect(body.primaryCardId).to.eql(Number(pm.environment.get('eceCardId')));",
+        "pm.expect(body.primaryCustomerName).to.eql('Ece Aydın');"
+      ] } }]
+    },
+    {
+      "name": "12 - Yasaklı Mesaj Sunucuda Engellenir",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerToken}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"recipientUserId\": 2,\n  \"message\": \"Lütfen doğrulama kodunu gönder\",\n  \"applicationId\": {{applicationId}}\n}" },
+        "url": { "raw": "{{baseUrl}}/api/platform/chat", "host": ["{{baseUrl}}"], "path": ["api", "platform", "chat"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Yasaklı içerik 400 ile engellendi', () => pm.response.to.have.status(400));",
+        "pm.expect(pm.response.json().detail).to.include('kimlik bilgisi talebi');"
+      ] } }]
+    },
+    {
+      "name": "13 - Müdür Aylık Analiz (Eylül 2026)",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/dashboard/manager?period=Month&month=9&year=2026", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "manager"], "query": [{ "key": "period", "value": "Month" }, { "key": "month", "value": "9" }, { "key": "year", "value": "2026" }] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Aylık analiz 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.test('Eylül günlük kırılımı 30 gündür', () => pm.expect(body.applicationTrend).to.have.length(30));",
+        "pm.test('Kart ağı yerine ürün seviyesi gruplanır', () => body.cardTypeDistribution.forEach(x => pm.expect(['Classic', 'Gold', 'Platinum', 'Platinum Plus']).to.include(x.cardType)));"
+      ] } }]
+    },
+    {
+      "name": "14 - Müdür Yıllık Analiz (2026)",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{managerToken}}", "type": "string" }] },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/dashboard/manager?period=Year&year=2026", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "manager"], "query": [{ "key": "period", "value": "Year" }, { "key": "year", "value": "2026" }] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Yıllık analiz 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.test('Yıllık kırılım 12 aydır', () => pm.expect(body.applicationTrend).to.have.length(12));",
+        "pm.test('Toplam başvuru ile dağılım sayıları tutarlı', () => pm.expect(body.cardTypeDistribution.reduce((sum, x) => sum + x.count, 0)).to.eql(body.totalApplications));"
+      ] } }]
+    }
+  ]
+}

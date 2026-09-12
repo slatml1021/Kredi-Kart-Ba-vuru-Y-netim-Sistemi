@@ -1,25 +1,50 @@
 <section class="customer-page">
   <div class="page-title">
     <div><p>MEMUR PANELİ / MÜŞTERİ İŞLEMLERİ</p><h1>Müşteri Sorgulama</h1><span>Müşteriyi TC Kimlik No, müşteri numarası, telefon veya ad soyad ile arayın.</span></div>
-    <a routerLink="/officer/customers/new">Yeni Müşteri Oluştur</a>
   </div>
 
   <article class="search-card">
-    <div class="card-title"><h2>Müşteri Bilgileri ile Sorgula</h2><p>En az bir arama kriteri girilmelidir.</p></div>
-    <form (ngSubmit)="search()">
-      <label for="customerQuery">Arama kriteri</label>
+    <form (submit)="$event.preventDefault(); search()">
       <div class="search-row">
-        <input id="customerQuery" [formControl]="query" placeholder="TC Kimlik No, müşteri no, telefon veya ad soyad" />
-        <button type="submit" [disabled]="isLoading()">{{ isLoading() ? 'Sorgulanıyor...' : 'Müşteri Sorgula' }}</button>
+        <label>Sorgulama Kriteri
+          <select [formControl]="criterion" (change)="clear()">
+            <option value="NationalIdentityNumber">TC Kimlik Numarası</option>
+            <option value="CustomerNumber">Müşteri Numarası</option>
+            <option value="PhoneNumber">Telefon Numarası</option>
+          </select>
+        </label>
+        <label>Arama Değeri
+          <div class="query-input">
+            @if (criterion.value === 'PhoneNumber') { <select class="country-select" [formControl]="phoneCountryCode" (change)="clear()">@for (country of phoneCountries; track country.code) { <option [value]="country.code">{{ country.label }}</option> }</select> }
+            <input id="customerQuery" [formControl]="query" [placeholder]="placeholder()" (input)="normalizeQuery()" autocomplete="off" />
+          </div>
+        </label>
+        <div class="search-actions">
+          <button type="submit" [disabled]="isLoading()">{{ isLoading() ? 'Sorgulanıyor...' : 'Müşteri Sorgula' }}</button>
+          <button type="button" class="clear-button" (click)="clear()">Temizle</button>
+        </div>
       </div>
       @if (query.touched && query.invalid) { <small>Bir arama kriteri giriniz.</small> }
     </form>
   </article>
 
-  @if (errorMessage()) { <div class="error-message" role="alert">{{ errorMessage() }}</div> }
+  @if (errorMessage()) { <div class="error-message" role="alert"><span>{{ errorMessage() }}</span><button type="button" aria-label="Uyarıyı kapat" (click)="errorMessage.set('')">×</button></div> }
+
+  @if (!hasSearched() && !errorMessage()) {
+    <article class="empty-state">
+      <div>⌕</div>
+      <h2>Sorgulama yapmaya başlayın</h2>
+      <p>Müşteri kaydını bulmak için yukarıdaki sorgulama kriterlerinden birini kullanın.</p>
+    </article>
+  }
 
   @if (hasSearched() && customers().length === 0 && !errorMessage()) {
-    <article class="empty-state"><div>⌕</div><h2>Müşteri bulunamadı</h2><p>Arama kriterini kontrol edin veya yeni müşteri oluşturun.</p></article>
+    <article class="empty-state">
+      <div>⌕</div>
+      <h2>Bu kişi güncel müşterimiz değil</h2>
+      <p>Arama kriterini kontrol edebilir veya kişi için yeni müşteri kaydı oluşturabilirsiniz.</p>
+      <a class="create-customer-action" routerLink="/officer/customers/new" [queryParams]="criterion.value === 'NationalIdentityNumber' ? { nationalIdentityNumber: query.value } : {}">Yeni Müşteri Oluştur →</a>
+    </article>
   }
 
   @if (customers().length > 0) {

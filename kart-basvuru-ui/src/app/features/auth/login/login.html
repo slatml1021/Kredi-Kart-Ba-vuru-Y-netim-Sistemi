@@ -9,7 +9,9 @@
   </section>
 
   <section class="form-panel">
-    <form [formGroup]="loginForm" (ngSubmit)="submit()" novalidate>
+    <form [formGroup]="loginForm" (ngSubmit)="submit()" autocomplete="off" novalidate>
+      <input type="text" name="prevent-personnel-autofill" autocomplete="username" tabindex="-1" aria-hidden="true" class="autofill-trap" />
+      <input type="password" name="prevent-password-autofill" autocomplete="new-password" tabindex="-1" aria-hidden="true" class="autofill-trap" />
       <p class="eyebrow">PERSONEL ERİŞİMİ</p>
       <h2>Personel Girişi</h2>
 
@@ -18,13 +20,18 @@
         <input
           id="registrationNumber"
           type="text"
-          autocomplete="username"
+          name="personnel-access-code"
+          autocomplete="one-time-code"
+          autocapitalize="characters"
+          spellcheck="false"
+          maxlength="9"
           placeholder="Sicil numaranızı girin"
           formControlName="registrationNumber"
+          (input)="normalizeRegistrationNumber()"
           [class.invalid]="loginForm.controls.registrationNumber.touched && loginForm.controls.registrationNumber.invalid"
         />
         @if (loginForm.controls.registrationNumber.touched && loginForm.controls.registrationNumber.invalid) {
-          <small>Sicil numarası zorunludur.</small>
+          <small>Geçerli sicil numaranızı girin.</small>
         }
       </div>
 
@@ -33,18 +40,17 @@
         <div class="password-field">
           <input
             id="password"
-            [type]="showPassword() ? 'text' : 'password'"
-            autocomplete="current-password"
+            type="password"
+            name="personnel-secret-code"
+            autocomplete="one-time-code"
+            maxlength="64"
             placeholder="Şifrenizi girin"
             formControlName="password"
             [class.invalid]="loginForm.controls.password.touched && loginForm.controls.password.invalid"
           />
-          <button type="button" class="show-password" (click)="togglePasswordVisibility()">
-            {{ showPassword() ? 'Gizle' : 'Göster' }}
-          </button>
         </div>
         @if (loginForm.controls.password.touched && loginForm.controls.password.invalid) {
-          <small>Şifre zorunludur ve en az 8 karakter olmalıdır.</small>
+          <small>Şifrenizi kontrol edin.</small>
         }
       </div>
 
@@ -53,9 +59,14 @@
           <b aria-hidden="true">!</b>
           {{ loginError() }}
         </div>
+        <button class="support-button" type="button" (click)="reportProblem()" [disabled]="isReporting()">
+          {{ isReporting() ? 'Gönderiliyor...' : 'Sorun Bildir' }}
+        </button>
       }
 
-      <button class="login-button" type="submit">Giriş Yap</button>
+      @if (supportNotice()) { <p class="support-notice" role="status">{{ supportNotice() }}</p> }
+
+      <button class="login-button" type="submit" [disabled]="isSubmitting()">{{ isSubmitting() ? 'Giriş yapılıyor...' : 'Giriş Yap' }}</button>
       <p class="security-note">Yetkisiz erişim girişimleri kayıt altına alınmaktadır.</p>
     </form>
   </section>

@@ -5,31 +5,78 @@
       <h1>Yeni Müşteri Oluştur</h1>
       <span>Kart başvurusu öncesinde müşterinin temel ve finansal bilgilerini kaydedin.</span>
     </div>
-    <a routerLink="/officer/customers">← Müşteri Sorgulamaya Dön</a>
+    <button type="button" class="page-cancel" (click)="cancel()">Müşteri Sorgulama</button>
   </div>
 
   <form [formGroup]="form" (ngSubmit)="save()">
     <article class="form-card">
-      <div class="card-title"><span>01</span><div><h2>Kimlik ve İletişim Bilgileri</h2><p>Zorunlu alanları müşteriden teyit ederek doldurun.</p></div></div>
+      <div class="card-title"><span>01</span><div><h2>Kişisel Bilgiler</h2><p>Kimlikte yer alan bilgileri eksiksiz girin.</p></div></div>
       <div class="form-grid">
-        <label>TC Kimlik Numarası<input formControlName="nationalIdentityNumber" inputmode="numeric" maxlength="11" placeholder="11 haneli TC Kimlik No" />@if (form.controls.nationalIdentityNumber.touched && form.controls.nationalIdentityNumber.invalid) { <small>11 haneli geçerli bir TC Kimlik No giriniz.</small> }</label>
-        <label>Telefon Numarası<input formControlName="phoneNumber" inputmode="tel" maxlength="11" placeholder="05XXXXXXXXX" />@if (form.controls.phoneNumber.touched && form.controls.phoneNumber.invalid) { <small>11 haneli telefon numarası giriniz.</small> }</label>
-        <label>Ad<input formControlName="firstName" placeholder="Müşteri adı" />@if (form.controls.firstName.touched && form.controls.firstName.invalid) { <small>Ad alanı zorunludur.</small> }</label>
-        <label>Soyad<input formControlName="lastName" placeholder="Müşteri soyadı" />@if (form.controls.lastName.touched && form.controls.lastName.invalid) { <small>Soyad alanı zorunludur.</small> }</label>
-        <label class="wide">E-posta Adresi<input formControlName="emailAddress" type="email" placeholder="ornek@eposta.com" />@if (form.controls.emailAddress.touched && form.controls.emailAddress.invalid) { <small>Geçerli bir e-posta adresi giriniz.</small> }</label>
+        <label>TC Kimlik Numarası *<input formControlName="nationalIdentityNumber" inputmode="numeric" maxlength="11" placeholder="11 haneli TC Kimlik No" (input)="sanitizeIdentity()" autocomplete="off" />@if (form.controls.nationalIdentityNumber.touched && form.controls.nationalIdentityNumber.invalid) { <small>Geçerli bir T.C. Kimlik Numarası giriniz.</small> }</label>
+        <label>Ad *<input formControlName="firstName" placeholder="Müşteri adı" (blur)="normalizeName(form.controls.firstName)" />@if (form.controls.firstName.touched && form.controls.firstName.invalid) { <small>Ad yalnızca harflerden oluşmalı ve en az 2 karakter olmalıdır.</small> }</label>
+        <label>Soyad *<input formControlName="lastName" placeholder="Müşteri soyadı" (blur)="normalizeName(form.controls.lastName)" />@if (form.controls.lastName.touched && form.controls.lastName.invalid) { <small>Soyad yalnızca harflerden oluşmalı ve en az 2 karakter olmalıdır.</small> }</label>
+        <div class="birth-field"><b>Doğum Tarihi *</b><div class="birth-selects">
+          <select [formControl]="birthDay" aria-label="Doğum günü"><option [ngValue]="null">Gün</option>@for(day of birthDays;track day){<option [ngValue]="day">{{ day }}</option>}</select>
+          <select [formControl]="birthMonth" aria-label="Doğum ayı"><option [ngValue]="null">Ay</option>@for(month of birthMonths;track month;let index=$index){<option [ngValue]="index + 1">{{ month }}</option>}</select>
+          <select [formControl]="birthYear" aria-label="Doğum yılı"><option [ngValue]="null">Yıl</option>@for(year of birthYears;track year){<option [ngValue]="year">{{ year }}</option>}</select>
+        </div><input formControlName="birthDate" type="hidden">@if (form.controls.birthDate.touched && form.controls.birthDate.invalid) { <small>Müşteri 18 yaşını doldurmuş ve en fazla 120 yaşında olmalıdır; geçerli bir gün, ay ve yıl seçiniz.</small> }</div>
+        <label>Cinsiyet *<select formControlName="gender"><option value="">Seçiniz</option><option>Kadın</option><option>Erkek</option><option>Belirtmek İstemiyor</option></select></label>
+      </div>
+      <div class="subsection"><h3>Eğitim ve Meslek Bilgileri</h3></div>
+      <div class="form-grid two">
+        <label>Eğitim Düzeyi *<select formControlName="educationLevel"><option value="">Seçiniz</option><option>İlköğretim</option><option>Lise</option><option>Ön Lisans</option><option>Lisans</option><option>Yüksek Lisans</option><option>Doktora</option></select></label>
+        <label>Çalışma Durumu *<select formControlName="employmentStatus"><option value="">Seçiniz</option><option>Çalışıyor</option><option>İşsiz</option><option>Öğrenci</option><option>Emekli - Çalışıyor</option><option>Emekli - Çalışmıyor</option></select></label>
+        <label>Meslek / Ünvan *<select formControlName="occupation"><option value="">Seçiniz</option><option>Mühendis</option><option>Öğretmen</option><option>Doktor</option><option>Hemşire</option><option>Eczacı</option><option>Avukat</option><option>Askeri Personel</option><option>Polis</option><option>Memur</option><option>Finans Uzmanı</option><option>Yazılım Uzmanı</option><option>Teknisyen</option><option>Esnaf</option><option>Serbest Meslek</option><option>Öğrenci</option><option>Emekli</option><option>İşsiz</option><option>Diğer</option></select></label>
+        @if (form.controls.occupation.value === 'Diğer') { <label>Diğer Meslek *<input formControlName="occupationOther" placeholder="Meslek bilgisini yazın">@if(form.controls.occupationOther.touched && form.controls.occupationOther.invalid){<small>Diğer meslek bilgisi zorunludur.</small>}</label> }
+        @if (educationOccupationError()) { <small class="wide">{{ educationOccupationError() }}</small> }
+      </div>
+      <div class="subsection"><h3>İletişim Bilgileri</h3></div>
+      <div class="form-grid two">
+        <label>Telefon Ülkesi *<select formControlName="phoneCountryCode">@for (country of phoneCountries; track country.code) { <option [value]="country.code">{{ country.label }}</option> }</select></label>
+        <label>Telefon Numarası *<input formControlName="phoneNumber" inputmode="tel" maxlength="11" [placeholder]="phonePlaceholder()" (input)="sanitizePhone()" />@if (form.controls.phoneNumber.touched && form.controls.phoneNumber.invalid) { <small>Seçilen ülkeye uygun telefon formatını giriniz.</small> }</label>
+        <label>E-posta Adresi *<input formControlName="emailAddress" type="email" placeholder="customer@example.com" (blur)="normalizeEmail()" />@if (form.controls.emailAddress.touched && form.controls.emailAddress.invalid) { <small>Geçerli bir e-posta adresi giriniz.</small> }</label>
+        <p class="wide">Telefon ve e-posta kayıt sonrasında 5 dakika geçerli tek kullanımlık kodlarla ayrı ayrı doğrulanacaktır.</p>
       </div>
     </article>
 
     <article class="form-card">
-      <div class="card-title"><span>02</span><div><h2>Finansal Bilgiler</h2><p>Limit hesaplamasında kullanılacak güncel tutarları girin.</p></div></div>
-      <div class="form-grid">
-        <label>Aylık Net Gelir (₺)<input formControlName="monthlyNetIncome" type="number" min="1" step="100" />@if (form.controls.monthlyNetIncome.touched && form.controls.monthlyNetIncome.invalid) { <small>Aylık net gelir sıfırdan büyük olmalıdır.</small> }</label>
-        <label>Diğer Banka Toplam Kart Limiti (₺)<input formControlName="otherBankTotalCardLimit" type="number" min="0" step="100" />@if (form.controls.otherBankTotalCardLimit.touched && form.controls.otherBankTotalCardLimit.invalid) { <small>Tutar negatif olamaz.</small> }</label>
+      <div class="card-title"><span>02</span><div><h2>Adres ve Finansal Bilgiler</h2><p>Teslimat ve limit hesabında kullanılacak güncel bilgileri girin.</p></div></div>
+      <div class="subsection"><h3>Adres Bilgileri</h3></div>
+      <div class="form-grid two">
+        <label>İl *<select formControlName="city"><option value="">İl seçiniz</option>@for (province of provinces(); track province.id) { <option [value]="province.name">{{ province.name }}</option> }</select></label>
+        <label>İlçe *<select formControlName="district"><option value="">{{ addressLoading() ? 'Yükleniyor...' : 'İlçe seçiniz' }}</option>@for (district of districts(); track district.id) { <option [value]="district.name">{{ district.name }}</option> }</select></label>
+        <label>Mahalle *<select formControlName="neighborhood"><option value="">{{ addressLoading() ? 'Yükleniyor...' : 'Mahalle seçiniz' }}</option>@for (neighborhood of neighborhoods(); track neighborhood.id) { <option [value]="neighborhood.name">{{ neighborhood.name }}</option> }</select></label>
+        <label>Cadde / Sokak / Bulvar *<select formControlName="street" [disabled]="!form.controls.neighborhood.value || addressLoading()"><option value="">{{ addressLoading() ? 'Ulusal katalog yükleniyor...' : 'Adres bileşeni seçiniz' }}</option>@for(street of streetOptions();track street){<option [value]="street">{{ street }}</option>}</select>@if(form.controls.street.touched && form.controls.street.invalid){<small>Önce mahalleyi, ardından gerçek adres bileşenini seçin.</small>}</label>
+        <label>Site / Mevki Bilgisi<input formControlName="avenue" maxlength="120" placeholder="Varsa site veya mevki adı" />@if(form.controls.avenue.touched && form.controls.avenue.invalid){<small>Geçersiz adres karakteri kullanıldı.</small>}</label>
+        <label>Bina No *<input formControlName="building" maxlength="20" placeholder="Örn. 12/A" />@if(form.controls.building.touched && form.controls.building.invalid){<small>Yalnızca harf, rakam, - ve / kullanılabilir.</small>}</label>
+        <label>Bina Adı<input formControlName="buildingName" maxlength="60" placeholder="Örn. Güneş Apartmanı" /></label>
+        <label>Daire No<input formControlName="apartment" maxlength="20" placeholder="Varsa daire numarası" />@if(form.controls.apartment.touched && form.controls.apartment.invalid){<small>Geçerli bir daire numarası giriniz.</small>}</label>
+        <label>Kat<input formControlName="floor" inputmode="numeric" placeholder="Örn. -1, 0, 5" />@if(form.controls.floor.touched && form.controls.floor.invalid){<small>Kat yalnızca negatif veya pozitif tam sayı olabilir.</small>}</label>
+        <label>Posta Kodu *<input formControlName="postalCode" inputmode="numeric" maxlength="5" readonly />@if(form.controls.postalCode.touched && form.controls.postalCode.invalid){<small>Mahalle kataloğunda geçerli bir posta kodu bulunmalıdır.</small>}@else if(postalCodeStatus()){<small class="helper">{{ postalCodeStatus() === 'official' ? 'PTT kaynaklı resmî mahalle posta kodu.' : postalCodeStatus() === 'derived' ? 'Önceki resmî yerleşim kaydından türetilen posta kodu.' : 'Katalog tarafından tahmin edilen posta kodu; kayıt öncesi kontrol edin.' }}</small>}</label>
+        <label class="wide">Oluşturulan Açık Adres<textarea rows="3" [value]="composedAddress()" readonly aria-label="Oluşturulan açık adres"></textarea><small class="helper">Adres, seçtiğiniz ve girdiğiniz alanlardan otomatik oluşturulur.</small></label>
       </div>
-      <div class="information"><b>Bilgilendirme</b><span>Bu bilgiler yalnızca başvuru değerlendirmesi ve müşteri limitinin hesaplanması amacıyla kullanılacaktır.</span></div>
+      <div class="subsection"><h3>Finansal Bilgiler</h3></div>
+      <div class="form-grid">
+        <label>Aylık Net Gelir (₺) *<input formControlName="monthlyNetIncome" type="number" min="1" step="100" placeholder="Örn. 45000" (focus)="clearZero(form.controls.monthlyNetIncome)" />@if (form.controls.monthlyNetIncome.touched && form.controls.monthlyNetIncome.invalid) { <small>Aylık net gelir sıfırdan büyük olmalıdır.</small> }</label>
+        <div class="field-summary"><b>Diğer Banka Toplam Kart Limiti</b><strong>{{ formatCurrency(otherBankTotal()) }}</strong><small>Aşağıdaki kartların limitlerinden otomatik hesaplanır.</small></div>
+        <div class="field-summary"><b>Kredi Notu</b><strong>{{ prototypeCreditScore() }}/1900</strong><small>Gelir, yaş ve mevcut kart limiti bilgilerine göre sistem tarafından otomatik hesaplanır.</small></div>
+      </div>
+      <div class="subsection"><h3>Diğer Bankalardaki Kartlar</h3><p>Dış banka kart bilgileri yetkili risk kaynağından otomatik getirilir ve güvenlik gereği bu ekrandan değiştirilemez.</p></div>
+      <div class="external-card-list">
+        @for (card of externalCards(); track card.bankName + card.maskedCardNumber) {
+          <div class="external-card"><span>{{ card.bankName }}</span><b>**** {{ card.maskedCardNumber }}</b><strong>{{ formatCurrency(card.cardLimit) }}</strong></div>
+        } @empty {
+          <p>{{ form.controls.nationalIdentityNumber.valid ? 'Müşterinin aktif diğer banka kredi kartı bulunmamaktadır.' : 'Geçerli TC Kimlik Numarası girildiğinde diğer banka kart bilgileri otomatik getirilecektir.' }}</p>
+        }
+      </div>
+      <label class="confirmation"><input type="checkbox" formControlName="kvkkConsentGranted" /> Aydınlatma Metni v2.1 müşteriye sunuldu ve KVKK kapsamında onayı alındı. *</label>
+      <label class="confirmation"><input type="checkbox" formControlName="smsConsentGranted" /> SMS iletişim izni alındı (isteğe bağlı).</label>
+      <label class="confirmation"><input type="checkbox" formControlName="emailConsentGranted" /> E-posta iletişim izni alındı (isteğe bağlı).</label>
+      <label class="confirmation"><input type="checkbox" formControlName="confirmed" /> Müşteri kimlik, iletişim, adres ve finansal bilgileri kontrol edilmiştir.</label>
     </article>
 
-    @if (errorMessage()) { <div class="error-message" role="alert">{{ errorMessage() }}</div> }
-    <div class="actions"><a routerLink="/officer/customers">Vazgeç</a><button type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Kaydediliyor...' : 'Müşteriyi Kaydet' }}</button></div>
+    @if (errorMessage()) { <div class="error-message" role="alert"><span>{{ errorMessage() }}</span><button type="button" aria-label="Uyarıyı kapat" (click)="errorMessage.set('')">×</button></div> }
+    <div class="actions"><button type="button" class="cancel-button" (click)="cancel()">Vazgeç</button><button type="submit" [disabled]="isSaving() || form.invalid || !!educationOccupationError()">{{ isSaving() ? 'Kaydediliyor...' : 'Müşteriyi Kaydet' }}</button></div>
   </form>
+  @if (showCancelConfirmation()) { <div class="modal-overlay" (click)="showCancelConfirmation.set(false)"><section class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="cancelTitle" (click)="$event.stopPropagation()"><h2 id="cancelTitle">Kaydedilmemiş bilgiler var</h2><p>Bu sayfadan ayrılırsanız girdiğiniz müşteri bilgileri silinecek.</p><div><button type="button" class="secondary" (click)="showCancelConfirmation.set(false)">Formda Kal</button><button type="button" class="danger" (click)="confirmCancel()">Ayrıl</button></div></section></div> }
 </section>

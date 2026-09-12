@@ -1,17 +1,12 @@
 <section class="dashboard-page">
   <div class="page-heading">
     <div><p>MEMUR PANELİ</p><h1>Merhaba, {{ authService.currentUser()?.fullName }}</h1><span>Başvurularınızın güncel durumunu ve performansını buradan takip edebilirsiniz.</span></div>
-    <a routerLink="/officer/customers">Müşteri Sorgula</a>
+    <a routerLink="/officer/customers/search">Müşteri Sorgula</a>
   </div>
 
   <div class="section-heading"><h2>Dönemsel Başvuru Sayıları</h2><p>Oluşturduğunuz başvuruların dönem bazlı özeti</p></div>
   <div class="metric-grid period-grid">
-    @for (card of periodCards; track card.label) { <article><span>{{ card.label }}</span><b>{{ card.value }}</b><small>{{ card.detail }}</small></article> }
-  </div>
-
-  <div class="section-heading"><h2>Başvuru Durumları</h2><p>Oluşturduğunuz başvuruların güncel dağılımı</p></div>
-  <div class="metric-grid status-grid">
-    @for (card of statusCards; track card.label) { <article><span>{{ card.label }}</span><b>{{ card.value }}</b></article> }
+    @for (card of periodCards(); track card.label) { <article [routerLink]="card.route" [queryParams]="card.status ? { status: card.status } : {}" tabindex="0"><span>{{ card.label }}</span><b>{{ card.value }}</b><small>{{ card.detail }}</small></article> }
   </div>
 
   <div class="section-heading"><h2>Başvuru Analizleri</h2><p>Kart tercihleri ve başvuruların yüzdesel dağılımı</p></div>
@@ -19,8 +14,11 @@
     <article class="chart-card">
       <div class="card-title"><h3>Kart Tipi Dağılımı</h3><p>Toplam {{ allApplications().length }} başvuru</p></div>
       <div class="donut-area">
-        <div class="donut" [style.background]="donutBackground()"><b>%{{ primaryCardType().percentage }}</b><span>{{ primaryCardType().name }}</span></div>
-        <ul>@for (item of cardTypeDistribution(); track item.name) { <li><i [class]="item.className"></i><span>{{ item.name }}</span><b>%{{ item.percentage }}</b><small>{{ item.count }} başvuru</small></li> }</ul>
+        <button type="button" class="donut" [style.background]="donutBackground()" (mousemove)="selectCardTypeByPointer($event)" (mouseleave)="selectedCardTypeName.set('')" aria-label="Kart tipi dağılımını incele">
+          <b>{{ selectedCardType() ? '%' + selectedCardType()!.percentage : allApplications().length }}</b>
+          <span>{{ selectedCardType()?.name ?? 'Toplam Başvuru' }}</span>
+        </button>
+        <ul>@for (item of cardTypeDistribution(); track item.name) { <li [class.selected]="selectedCardType()?.name === item.name" (mouseenter)="selectedCardTypeName.set(item.name)" (mouseleave)="selectedCardTypeName.set('')"><i [class]="item.className"></i><span>{{ item.name }}</span><b>%{{ item.percentage }}</b><small>{{ item.count }} başvuru</small></li> }</ul>
       </div>
     </article>
     <article class="chart-card">
@@ -32,14 +30,18 @@
   </div>
 
   <article class="applications-card">
-    <div class="card-title table-title"><div><h3>Son Oluşturulan Başvurular</h3><p>En son oluşturduğunuz kart başvuruları</p></div><a routerLink="/officer/applications">Tüm Başvuruları Gör →</a></div>
+    <div class="card-title table-title"><div><h3>Son Oluşturulan Talepler</h3><p>Kart, ek kart ve limit değişiklik talepleri tek zaman akışında</p></div><a routerLink="/officer/applications">Kart Başvurularını Gör →</a></div>
     <div class="filters">
-      <input type="search" placeholder="Başvuru no, müşteri veya kart tipi ara..." (input)="dashboardSearch.set($any($event.target).value)" />
-      <div>@for (item of filterOptions; track item.value) { <button [class.selected]="dashboardStatus() === item.value" (click)="dashboardStatus.set(item.value)">{{ item.label }}</button> }</div>
+      <input type="search" placeholder="Talep no, müşteri veya işlem ara..." [value]="dashboardSearch()" (input)="dashboardSearch.set($any($event.target).value)" />
+      <select aria-label="İşlem türü" [value]="dashboardType()" (change)="dashboardType.set($any($event.target).value)">@for (item of requestTypeOptions; track item.value) { <option [value]="item.value">{{ item.label }}</option> }</select>
+      <select aria-label="Durum" [value]="dashboardStatus()" (change)="dashboardStatus.set($any($event.target).value)">@for (item of filterOptions; track item.value) { <option [value]="item.value">{{ item.label }}</option> }</select>
+      <select aria-label="Sıralama" [value]="dashboardSort()" (change)="dashboardSort.set($any($event.target).value)"><option value="Newest">En yeni</option><option value="Oldest">En eski</option></select>
+      <select aria-label="Tarih" [value]="dashboardDate()" (change)="dashboardDate.set($any($event.target).value)"><option value="All">Tüm tarihler</option><option value="Today">Bugün</option><option value="Week">Bu hafta</option></select>
+      @if (dashboardFiltersActive()) { <button type="button" class="clear-filters" (click)="clearDashboardFilters()">Filtreleri temizle</button> }
     </div>
-    <div class="table-wrap"><table><thead><tr><th>BAŞVURU NO</th><th>MÜŞTERİ</th><th>KART TİPİ</th><th>TARİH</th><th>DURUM</th></tr></thead><tbody>
-      @for (item of applications(); track item.number) { <tr><td><a [routerLink]="['/officer/applications', item.id]">{{ item.number }}</a></td><td>{{ item.customer }}</td><td>{{ item.type }}</td><td>{{ item.date }}</td><td><span class="badge" [class]="'badge ' + item.className">● {{ item.status }}</span></td></tr> }
-      @empty { <tr><td colspan="5">Filtreye uygun başvuru bulunmuyor.</td></tr> }
+    <div class="table-wrap"><table><thead><tr><th>TALEP NO</th><th>İŞLEM TÜRÜ</th><th>MÜŞTERİ</th><th>AÇIKLAMA</th><th>TARİH</th><th>DURUM</th><th>İŞLEM</th></tr></thead><tbody>
+      @for (item of applications(); track item.type + item.id) { <tr class="clickable-row" [routerLink]="item.route" tabindex="0"><td><b>{{ item.number }}</b></td><td><span [class]="'request-type ' + item.typeClass">{{ item.type }}</span></td><td><a [routerLink]="item.customerRoute" (click)="$event.stopPropagation()">{{ item.customer }}</a></td><td>{{ item.description }}</td><td>{{ item.date }}</td><td><span class="badge" [class]="'badge ' + item.className">● {{ item.status }}</span></td><td><a [routerLink]="item.route" (click)="$event.stopPropagation()">İncele →</a></td></tr> }
+      @empty { <tr><td colspan="7">Filtreye uygun talep bulunmuyor.</td></tr> }
     </tbody></table></div>
   </article>
 </section>

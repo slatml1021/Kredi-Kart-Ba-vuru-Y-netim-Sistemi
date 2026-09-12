@@ -1,9 +1,11 @@
 using CreditCardApplication.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CreditCardApplication.Api.Controllers;
 
 [ApiController]
+[Authorize(Roles = "Officer,Manager")]
 [Route("api/limits")]
 public sealed class LimitsController(LimitCalculator limitCalculator) : ControllerBase
 {
