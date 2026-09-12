@@ -1,53 +1,35 @@
 # Kredi Kartı Başvuru Yönetim Sistemi
 
-Angular 20 ve ASP.NET Core 8 ile geliştirilen bu proje; banka personelinin asıl kart, ek kart ve limit taleplerini tek uygulamadan yönetmesini sağlayan uçtan uca bir staj prototipidir. Müşteri, memur ve müdür ekranları; rol tabanlı yetkilendirme, iş atama, onay/revizyon akışları, kart üretim simülasyonu ve denetim kayıtlarıyla birlikte çalışır.
+Bu proje yaz stajım sırasında, bankadaki kredi kartı başvuru sürecini daha iyi anlamak ve örnek bir uygulama geliştirmek amacıyla hazırlandı. Uygulamada memur ve müdür için ayrı ekranlar bulunuyor. Müşteri kaydından başlayarak kart başvurusu, değerlendirme, kart oluşturma ve teslim aşamalarına kadar olan süreç takip edilebiliyor.
 
-> Proje yerel geliştirme ve sunum amacıyla hazırlanmıştır. Gerçek KKB/Findeks, SMS, e-posta, kart basım ve kurye servisleri simüle edilir; gerçek kart numarası veya CVV saklanmaz.
+## Projede neler var?
 
-## Öne çıkan özellikler
+- Müşteri arama, kayıt ve adres işlemleri
+- Asıl kart ve ek kart başvurusu
+- Belge yükleme ve başvuru özeti
+- Memur ve müdür girişleri
+- Başvuruya memur atama
+- Müdür onay, ret ve revizyon işlemleri
+- Limit artırım ve azaltım talepleri
+- Kart detayları ve teslimat aşamaları
+- Personel iletişim ekranı
+- Yönetim panelinde günlük, haftalık, aylık ve yıllık analiz
+- Müşteri portalı
 
-- Memur ve müdür için JWT tabanlı oturum ve rol yetkilendirmesi
-- Müşteri arama, oluşturma, profil/KVKK ve çoklu adres yönetimi
-- Asıl kredi kartı başvurusu, belge yükleme ve başvuru özeti
-- Ana karttan başlatılabilen ek kart başvurusu ve ek kart sahibinin ayrı kontrolü
-- Müdür değerlendirmesi: onay, ret, revizyon ve yüksek tutarda iki farklı müdür onayı
-- Manuel veya otomatik memur atama, SLA seviyesi ve işlem geçmişi
-- Limit artırım/azaltım talepleri ve müdür karar ekranı
-- Kart üretimi, maskeli PAN, kart ağı, basım–kurye–teslim yaşam döngüsü
-- Müşteri portalı, personel iletişim merkezi, bildirim ve denetim kayıtları
-- Günlük, haftalık, aylık ve yıllık yönetim analizleri
-- 200 müşteri, 50 memur, 5 müdür, 200 ana kart ve 200 ek karttan oluşan sunum veri seti
+## Kullanılan teknolojiler
 
-## Teknik yapı
+- Angular 20, TypeScript ve SCSS
+- ASP.NET Core 8 Web API
+- Entity Framework Core
+- SQLite
+- JWT ve BCrypt
+- xUnit
 
-```text
-kart-basvuru-ui/                        Angular 20, TypeScript, SCSS
-backend/src/
-  CreditCardApplication.Api/            HTTP uçları, JWT ve ara katmanlar
-  CreditCardApplication.Application/    kullanım senaryoları ve iş kuralları
-  CreditCardApplication.Domain/         varlıklar ve durum sabitleri
-  CreditCardApplication.Infrastructure/ EF Core, SQLite, veri hazırlama ve servisler
-backend/tests/                           xUnit iş kuralı ve veri bütünlüğü testleri
-docs/                                    test senaryoları, veri tabanı ve sunum belgeleri
-```
+Backend tarafı API, Application, Domain ve Infrastructure katmanlarından oluşuyor. Frontend uygulaması `kart-basvuru-ui`, backend uygulaması ise `backend` klasöründe bulunuyor.
 
-Veri erişimi Entity Framework Core ve SQLite ile sağlanır. Yerel adres seçimi için uygulamayla birlikte ulusal adres kataloğu kullanılır. Uygulama başlangıcında yabancı anahtar ve bütünlük kontrolleri çalıştırılır.
+## Çalıştırma
 
-## İş kuralları ve güvenlik
-
-- Kart numarası Luhn kontrol hanesiyle üretilir; yalnızca maskeli gösterim saklanır.
-- T.C. kimlik numarası biçim ve kontrol rakamlarıyla doğrulanır.
-- Parolalar açık metin değil BCrypt özeti olarak tutulur.
-- Güncel KVKK onayı, eksiksiz müşteri profili ve zorunlu belge kontrolleri olmadan asıl kart başvurusu oluşturulamaz.
-- Aynı kart tipi için açık başvuru veya aktif/onaylı kart varsa mükerrer başvuru engellenir.
-- 100.000 TL üzerindeki ya da yüksek riskli başvurular iki farklı müdürün onayını gerektirir.
-- Kartın tam PAN/CVV bilgisi, hassas belge içeriği ve parola değerleri loglara yazılmaz.
-
-## Yerel çalıştırma
-
-Gereksinimler: .NET 8 SDK, Node.js 22 ve npm 10 veya üzeri.
-
-Backend:
+Backend için:
 
 ```bash
 cd backend
@@ -55,7 +37,7 @@ dotnet restore CreditCardApplicationSystem.sln
 dotnet run --project src/CreditCardApplication.Api/CreditCardApplication.Api.csproj --launch-profile http
 ```
 
-Frontend, ayrı bir terminalde:
+Frontend için ayrı bir terminalde:
 
 ```bash
 cd kart-basvuru-ui
@@ -63,19 +45,19 @@ npm ci
 npm start
 ```
 
-Uygulama `http://localhost:4200`, API ise `http://localhost:5057` adresinde açılır. Geliştirme verisi `ASPNETCORE_ENVIRONMENT=Development` ve `DemoData:Enabled=true` olduğunda idempotent olarak hazırlanır.
+Frontend `http://localhost:4200`, API `http://localhost:5057` adresinde çalışır.
 
-### Sunum hesapları
+## Demo giriş bilgileri
 
-| Rol | Sicil / kullanıcı no | Parola |
+| Rol | Kullanıcı | Parola |
 | --- | --- | --- |
 | Memur | `KBP000001` | `DemoLogin01!` |
 | Müdür | `KBP000002` | `DemoLogin01!` |
-| Müşteri portalı | `MUS000001` | `Musteri123!` |
+| Müşteri | `MUS000001` | `Musteri123!` |
 
-Bu bilgiler yalnızca yerel geliştirme ortamı içindir.
+Veritabanı ilk çalıştırmada örnek olarak 200 müşteri, 50 memur, 5 müdür, 200 ana kart ve 200 ek kart oluşturur. Bu kayıtlar gerçek kullanıcı bilgisi değildir.
 
-## Doğrulama
+## Test
 
 ```bash
 cd backend
@@ -86,21 +68,15 @@ npm run build
 npx tsc -p tsconfig.spec.json --noEmit
 ```
 
-API regresyon koleksiyonları ve beklenen sonuçlar [Postman belgelerinde](docs/postman/README.md), elle doğrulanabilecek uçtan uca senaryolar ise [test senaryolarında](docs/TEST-SCENARIOS.md) bulunur.
+Kart numarası oluşturulurken Luhn kontrolü uygulanır. Tam kart numarası ve CVV veritabanında tutulmaz. SMS, e-posta, Findeks/KKB, kart basım ve kurye işlemleri bu projede örnek olarak çalışır.
 
-## Dokümantasyon
+## Dokümanlar
 
-- [Proje sunumu (PDF)](docs/presentation/Kredi_Karti_Basvuru_Yonetim_Sistemi_Proje_Sunumu_20260907_v4.pdf)
-- [Veritabanı ve sunum rehberi](docs/DATABASE-AND-PRESENTATION-GUIDE.md)
+- [Proje sunumu](docs/presentation/Kredi_Karti_Basvuru_Yonetim_Sistemi_Proje_Sunumu_20260907_v4.pdf)
 - [Test senaryoları](docs/TEST-SCENARIOS.md)
-- [Kart numarası üretimi ve Luhn](docs/card-number-generation.md)
-- [Adres veri kaynağı](docs/address-data.md)
-- [Veritabanı sağlık kontrolü](docs/database-health-check.sql)
+- [Veritabanı ve sunum notları](docs/DATABASE-AND-PRESENTATION-GUIDE.md)
+- [Kart numarası ve Luhn notları](docs/card-number-generation.md)
 
-## Üretime geçiş öncesi
+## Geliştiren
 
-SQLite yerine yönetilen bir kurumsal veri tabanı, merkezi gizli bilgi yönetimi, gerçek SMS/e-posta ve görüşme sağlayıcıları, zararlı dosya taraması, yük/penetrasyon/erişilebilirlik testleri, gözlemlenebilirlik ve yedekleme politikaları tamamlanmalıdır. Demo veri üretimi ve geliştirme doğrulama kodları üretim ortamında kapalı tutulmalıdır.
-
-## Geliştirici
-
-Sıla Temel — Yazılım Mühendisliği
+Sıla Temel
