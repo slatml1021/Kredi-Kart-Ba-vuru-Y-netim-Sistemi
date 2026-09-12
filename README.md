@@ -16,6 +16,42 @@ Bu proje yaz stajım sırasında, bankadaki kredi kartı başvuru sürecini daha
 - Yönetim panelinde günlük, haftalık, aylık ve yıllık analiz
 - Müşteri portalı
 
+## Uygulamadan ekranlar
+
+### Personel girişi
+
+Memur ve müdür girişleri aynı ekran üzerinden yapılır. Kullanıcının rolüne göre açılan menüler ve yetkiler değişir.
+
+![Personel giriş ekranı](docs/screenshots/personel-giris.jpg)
+
+### Memur paneli ve yeni kart başvurusu
+
+Memur ana sayfasından müşteri ve başvuru işlemlerine ulaşılabilir. Yeni kart başvurusunda müşteri, kart ürünü, limit, teslimat ve belge bilgileri adım adım alınır.
+
+![Memur ana sayfası](docs/screenshots/memur-anasayfa.jpg)
+
+![Yeni kart başvurusu](docs/screenshots/yeni-kart-basvurusu.jpg)
+
+### Kart ve başvuru detayı
+
+Başvuru geçmişi, KYC kontrolleri, kartın güncel durumu ve teslimat aşamaları aynı detay ekranından izlenebilir.
+
+![Kart detay ekranı](docs/screenshots/kart-detayi.jpg)
+
+### Müdür paneli
+
+Müdür panelinde açık ve sonuçlanmış başvurular, iş dağılımı, personel performansı ve dönemsel analizler bulunur. Değerlendirme kuyruğundaki başvurular incelenerek onay, ret veya revizyon kararı verilebilir.
+
+![Müdür yönetim paneli](docs/screenshots/mudur-yonetim-paneli.jpg)
+
+![Müdür değerlendirme kuyruğu](docs/screenshots/mudur-degerlendirme.jpg)
+
+### Ek kart başvurusu
+
+Ek kart başvurusunun sahibi, limiti ve süreç bilgileri detay sayfasında gösterilir; kart oluşturulduktan sonra ilgili kart kaydına buradan ulaşılabilir.
+
+![Ek kart başvuru detayı](docs/screenshots/ek-kart-basvuru-detayi.jpg)
+
 ## Kullanılan teknolojiler
 
 - Angular 20, TypeScript ve SCSS
